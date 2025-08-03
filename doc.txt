@@ -1,0 +1,113 @@
+Project: NC - NCC Credit System
+Version: 1.0
+Date: July 21, 2025
+
+1. Introduction
+1.1 Purpose
+The NC - NCC Credit System is a channel application integrated into the Mezon platform (https://mezon.ai), functioning as an internal e-banking service. It enables users to:
+• Deposit tokens into savings accounts to earn interest.
+• Borrow tokens and repay with interest over defined terms.
+• Manage transactions via an automated bot.
+This document outlines functional, technical, and operational requirements.
+
+1.2 Scope
+• Develop a credit scoring algorithm (NC Score) for loan eligibility.
+• Implement deposit/withdrawal workflows via NCC Credit Bot.
+• Establish a token pool managed by the CEO for risk mitigation.
+• Out of Scope: External currency conversion, mobile app development, or third-party integrations.
+
+1.3 Definitions
+Term Definition
+NC Score Credit score (min 100,000) determining loan limits.
+Token Internal cryptocurrency on Mezon.
+Pool Central token reservoir managed by NCC Credit Bot.
+
+2. Overall Description
+2.1 Product Perspective
+• Integration: Embedded within Mezon as a dedicated channel.
+• Users: NCC+ Company employees with Mezon accounts.
+• Dependencies: Mezon’s authentication, token wallet, and bot API.
+
+2.2 User Classes
+User Class Requirements
+Employees Deposit/withdraw tokens, check NC Score, apply loans.
+Bot Admin Configure interest rates, troubleshoot transactions.
+Monitor pool balance, replenish tokens for defaults.
+
+2.3 Operating Environment
+• Platform: Mezon Channel app.
+• Backend: Node.js, PostgreSQL, Redis for real-time processing.
+• Security: Mezon, encrypted database.
+
+3. Functional Requirements
+3.1 NC Credit Scoring
+FR1 Calculate NC Score (min 100,000) based on:
+• Loan repayment history (+/- points)
+• Job level (e.g., Manager: +10,000)
+• Tenure (+3,000/year)
+Priority: High
+
+FR2 Adjust NC Score dynamically:
+• +5,000 for timely loan repayment
+• -10,000 for missed payments
+Priority: High
+
+3.2 Token Transactions
+FR3 Deposit tokens via channel app → Transfer to Pool (Bot). Priority: High
+FR4 Withdraw tokens via channel app → Deduct from Pool. Priority: High
+FR5 Enforce min/max limits:
+• Min deposit/withdrawal: 1,000 tokens
+• Max loan: 50% of NC Score
+Priority: Medium
+
+3.3 Lending & Savings
+FR6 Apply interest to savings:
+• Weekly: 0.5%/year
+• Monthly: 3.5%/year
+• Quarterly: 3.8%/year
+• Annually: 4.85%/year
+Priority: High
+
+FR7 Approve loans if:
+• Requested amount ≤ 50% of NC Score
+• No active defaults
+Priority: High
+
+Loan rate: 16.3%/year
+FR8 Block loan access after 2 missed payments. Priority: Medium
+
+3.4 NCC Credit Bot
+FR9 Respond to commands: (...) Priority: High
+FR10 Notify users of payment due dates. Priority: Medium
+
+4. Non-Functional Requirements
+4.1 Performance
+NFR1 Process transactions in < 2 seconds.
+NFR2 Support 500 concurrent users.
+
+4.2 Security
+NFR3 Token encryption (AES-256).
+NFR4 Audit logs for all transactions.
+
+4.3 Reliability
+NFR5 99.9% uptime (excl. maintenance).
+NFR6 Recover data within 15 minutes after failure.
+
+5. System Interfaces
+5.1 NCC Credit Bot Commands
+!deposit 500 Transfer 500 tokens to Pool.
+!withdraw 200 Move 200 tokens from Pool to user.
+
+5.2 CEO Dashboard
+• Real-time Pool balance monitoring.
+• Alerts for token replenishment needs.
+
+6. Appendices
+6.1 Risk Management
+• Default Handling: CEO replenishes Pool if debt defaults exceed reserves.
+• Token Stability: Tokens are non-exchangeable for fiat currency.
+
+6.2 Revision History
+Version Date Changes
+1.0 July 21, 2025 Initial release.
+
