@@ -2,16 +2,16 @@
   "name": "mezon-bot-template",
   "version": "1.0.0",
   "description": "",
-  "homepage": "https://github.com/hoangduy0610/mezon-bot-template#readme",
+  "homepage": "https://github.com/tranuyn/SGI#readme",
   "bugs": {
-    "url": "https://github.com/hoangduy0610/mezon-bot-template/issues"
+    "url": "https://github.com/tranuyn/SGI/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hoangduy0610/mezon-bot-template.git"
+    "url": "git+https://github.com/tranuyn/SGI.git"
   },
   "license": "ISC",
-  "author": "Nguyen Hoang Duy",
+  "author": "SGI",
   "private": true,
   "scripts": {
     "build": "nest build",

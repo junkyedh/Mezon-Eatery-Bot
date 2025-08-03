@@ -22,8 +22,8 @@ A modern, scalable chat bot built with NestJS and TypeScript for the Mezon chat 
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/hoangduy0610/mezon-bot-template.git
-   cd mezon-bot-template
+   git clone https://github.com/tranuyn/SGI.git
+   cd SGI
    ```
 
 2. **Install dependencies**
@@ -203,8 +203,11 @@ This project is licensed under the ISC License.
 
 ## 👤 Author
 
-**Nguyen Hoang Duy**
-- GitHub: [@hoangduy0610](https://github.com/hoangduy0610)
+| Name                  | GitHub Profile |
+|-----------------------|----------------|
+| Tran Huynh Nha Uyen   | [@tranuyn](https://github.com/tranuyn) |
+| Duong Hai Han         | [@han.duonghai](https://github.com/Junkyedh) |
+| Nguyen Ton Minh Quan  | [@quan.nguyentonminh](https://github.com/xmen02052003lx) |
 
 ## 🙏 Acknowledgments
 
