@@ -21,6 +21,8 @@ export enum TransactionStatus {
   FAILED = 'failed',
 }
 
+export type TransactionSource = 'mezon' | 'manual';
+
 @Entity('transactions')
 export class Transaction {
   @PrimaryGeneratedColumn('uuid')
@@ -47,6 +49,32 @@ export class Transaction {
 
   @Column({ nullable: true })
   description: string;
+
+  // NOTE: Database columns were created in snake_case by migrations.
+  @Column({
+    name: 'external_tx_id',
+    type: 'varchar',
+    length: 128,
+    nullable: true,
+  })
+  externalTxId?: string;
+
+  @Column({
+    name: 'idempotency_key',
+    type: 'varchar',
+    length: 128,
+    nullable: true,
+    unique: true,
+  })
+  idempotencyKey?: string;
+
+  @Column({
+    name: 'source',
+    type: 'enum',
+    enum: ['mezon', 'manual'],
+    nullable: true,
+  })
+  source?: TransactionSource;
 
   @CreateDateColumn()
   createdAt: Date;

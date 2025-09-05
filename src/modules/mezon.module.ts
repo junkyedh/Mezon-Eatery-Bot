@@ -1,6 +1,7 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MezonClientService } from '@app/services/mezon-client.service';
+import { MezonWalletService } from '@app/services/mezon-wallet.service';
 import {
   MezonClientConfig,
   MezonModuleAsyncOptions,
@@ -29,8 +30,9 @@ export class MezonModule {
           },
           inject: [ConfigService],
         },
+        MezonWalletService,
       ],
-      exports: [MezonClientService],
+      exports: [MezonClientService, MezonWalletService],
     };
   }
 }
