@@ -3,6 +3,7 @@ import { Command } from '@app/decorators/command.decorator';
 import { CommandMessage } from '@app/command/common/command.abstract';
 import { TransactionService } from '@app/services/transaction.service';
 import { UserService } from '@app/services/user.service';
+import { formatToken } from '@app/utils/token-format';
 
 @Command('deposit', {
   description: 'Gửi token vào NCC Credit Pool',
@@ -28,7 +29,7 @@ export class DepositCommand extends CommandMessage {
       );
 
       const prettyAmount =
-        amount > 0 ? `**${amount.toLocaleString()}** token ` : '';
+        amount > 0 ? `**${formatToken(amount)}** token ` : '';
       const messageContent =
         `🧾 **Hướng Dẫn Nạp Token**\n\n` +
         `➡️ Chuyển ${prettyAmount}trực tiếp cho bot qua Mezon transfer.\n` +

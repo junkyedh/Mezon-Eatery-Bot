@@ -42,6 +42,11 @@ export class UserService {
     });
   }
 
+  async getUsersByIds(ids: string[]): Promise<User[]> {
+    if (!ids.length) return [];
+    return this.userRepository.find({ where: ids.map((id) => ({ id })) });
+  }
+
   async updateNCScore(userId: string, points: number): Promise<void> {
     await this.userRepository
       .createQueryBuilder()

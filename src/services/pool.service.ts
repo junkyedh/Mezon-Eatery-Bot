@@ -29,7 +29,7 @@ export class PoolService {
 
   async addToPool(amount: number): Promise<void> {
     const pool = await this.getPool();
-    
+
     await this.poolRepository.update(pool.id, {
       totalBalance: pool.totalBalance + amount,
       availableBalance: pool.availableBalance + amount,
@@ -38,7 +38,7 @@ export class PoolService {
 
   async removeFromPool(amount: number): Promise<void> {
     const pool = await this.getPool();
-    
+
     if (pool.availableBalance < amount) {
       throw new Error('Insufficient pool balance');
     }
@@ -51,7 +51,7 @@ export class PoolService {
 
   async addLoanToPool(amount: number): Promise<void> {
     const pool = await this.getPool();
-    
+
     await this.poolRepository.update(pool.id, {
       loanedAmount: pool.loanedAmount + amount,
       availableBalance: pool.availableBalance - amount,
@@ -60,20 +60,24 @@ export class PoolService {
 
   async removeLoanFromPool(amount: number): Promise<void> {
     const pool = await this.getPool();
-    
+
     await this.poolRepository.update(pool.id, {
       loanedAmount: pool.loanedAmount - amount,
       availableBalance: pool.availableBalance + amount,
     });
   }
 
-  async getPoolBalance(): Promise<{ total: number; available: number; loaned: number }> {
+  async getPoolBalance(): Promise<{
+    total: number;
+    available: number;
+    loaned: number;
+  }> {
     const pool = await this.getPool();
-    
+
     return {
       total: pool.totalBalance,
       available: pool.availableBalance,
       loaned: pool.loanedAmount,
     };
   }
-} 
+}

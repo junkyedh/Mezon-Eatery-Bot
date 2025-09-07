@@ -4,7 +4,11 @@ import { AboutCommand } from '@app/command/about.command';
 import { DepositCommand } from '@app/command/deposit.command';
 import { WithdrawCommand } from '@app/command/withdraw.command';
 import { ScoreCommand } from '@app/command/score.command';
-import { LoanCommand } from '@app/command/loan.command';
+import { LoanRequestCommand } from '@app/command/loan-request.command';
+import { LoanChecklistCommand } from '@app/command/loan-checklist.command';
+import { LoanFundCommand } from '@app/command/loan-fund.command';
+import { LoanTransactionCommand } from '@app/command/loan-transaction.command';
+import { LoanRepayCommand } from '@app/command/loan-repay.command';
 import { BalanceCommand } from '@app/command/balance.command';
 import { ClientConfigService } from '@app/config/client.config';
 import { BotGateway } from '@app/gateway/bot.gateway';
@@ -56,7 +60,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     DepositCommand,
     WithdrawCommand,
     ScoreCommand,
-    LoanCommand,
+    LoanRequestCommand,
+    LoanChecklistCommand,
+    LoanFundCommand,
+    LoanTransactionCommand,
+    LoanRepayCommand,
     BalanceCommand,
   ],
   controllers: [],

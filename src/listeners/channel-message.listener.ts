@@ -27,9 +27,9 @@ export class ChannelMessageListener {
   async handleChannelMessage(message: any) {
     try {
       const botUserId = this.mezonClient.getBotUserId();
-      if (botUserId && message.sender_id === botUserId) return; // ignore self
+      if (botUserId && message.sender_id === botUserId) return;
       const text: string | undefined = message?.content?.t;
-      if (!text || !text.startsWith('!')) return; // not a command
+      if (!text || !text.startsWith('!')) return;
 
       // Track user's last channel for future replies (e.g., deposit confirmations)
       if (message?.channel_id) {
@@ -73,7 +73,7 @@ export class ChannelMessageListener {
         return;
       }
 
-      if (to_user_id !== botUserId) return; // Not to bot
+      if (to_user_id !== botUserId) return;
 
       const user = await this.userService.findOrCreateUser(
         from_user_id,

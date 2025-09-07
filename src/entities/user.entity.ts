@@ -30,7 +30,7 @@ export class User {
   jobLevel: string;
 
   @Column({ nullable: true })
-  tenure: number; // years
+  tenure: number;
 
   @Column({ default: false })
   isBlocked: boolean;

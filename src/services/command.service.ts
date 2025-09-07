@@ -23,5 +23,13 @@ export class CommandService implements CommandInterface {
         return command.execute(args, message);
       }
     }
+    // Unknown command fallback message (public)
+    return {
+      msg: {
+        t: `❌ Lệnh không hợp lệ: !${commandName}\nGõ !help để xem danh sách lệnh khả dụng.`,
+      },
+      channel_id: message.channel_id,
+      is_public: true,
+    } as any;
   }
 }

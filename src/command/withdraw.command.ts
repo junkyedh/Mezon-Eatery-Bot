@@ -4,6 +4,7 @@ import { CommandMessage } from '@app/command/common/command.abstract';
 import { TransactionService } from '@app/services/transaction.service';
 import { UserService } from '@app/services/user.service';
 import { MezonWalletService } from '@app/services/mezon-wallet.service';
+import { formatToken } from '@app/utils/token-format';
 
 @Command('withdraw', {
   description: 'Rút token từ NCC Credit Pool',
@@ -84,7 +85,7 @@ export class WithdrawCommand extends CommandMessage {
         console.error('DB update failed after successful withdraw:', dbErr);
         const messageContent =
           `⚠️ Token đã được chuyển nhưng cập nhật số dư tạm thời chưa thành công.\n` +
-          `💰 **Số lượng:** ${amount.toLocaleString()} tokens\n` +
+          `💰 **Số lượng:** ${formatToken(amount)} tokens\n` +
           `🔗 **External Tx ID:** ${walletResult.externalTxId || 'N/A'}\n` +
           `🛠️ Hệ thống sẽ tự đồng bộ trong ít phút.`;
         return this.replyMessageGenerate({ messageContent }, message);
@@ -92,8 +93,8 @@ export class WithdrawCommand extends CommandMessage {
 
       const messageContent =
         `✅ **Rút token thành công!**\n\n` +
-        `💰 **Số lượng:** ${amount.toLocaleString()} tokens\n` +
-        `📊 **Số dư hiện tại:** ${Number(updatedBalance).toLocaleString()} tokens\n` +
+        `💰 **Số lượng:** ${formatToken(amount)} tokens\n` +
+        `📊 **Số dư hiện tại:** ${formatToken(updatedBalance)} tokens\n` +
         `🆔 **Transaction ID:** ${transactionId}\n` +
         `💡 *Token đã được chuyển về ví của bạn.*`;
 
