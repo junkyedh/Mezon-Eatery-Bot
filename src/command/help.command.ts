@@ -16,12 +16,11 @@ export class HelpCommand extends CommandMessage {
 
   execute(args: string[], message: ChannelMessage) {
     if (args.length > 0) {
-      // Show help for specific command
       const commandName = args[0].toLowerCase();
       const metadata = CommandStorage.getCommandMetadata(commandName);
 
       if (!metadata) {
-        const messageContent = `Command '${commandName}' not found. Use !help to see all available commands.`;
+        const messageContent = `Command '${commandName}' không tồn tại. Dùng !help để xem tất cả các lệnh có sẵn.`;
         return this.replyMessageGenerate({ messageContent }, message);
       }
 
@@ -38,7 +37,7 @@ export class HelpCommand extends CommandMessage {
     // Show all commands grouped by category
     const commands = Array.from(CommandStorage.getAllCommands().entries());
     const categories = new Map<string, string[]>();
-    
+
     commands.forEach(([name, metadata]) => {
       const category = metadata.category || 'General';
       if (!categories.has(category)) {
@@ -47,15 +46,36 @@ export class HelpCommand extends CommandMessage {
       categories.get(category)!.push(name);
     });
 
-    let messageContent = `**NCC Credit System - Available Commands:**\n\n`;
-    
+    let messageContent =
+      `**NCC Credit System - Hướng Dẫn Nhanh**\n\n` +
+      `📌 Tiền tố (prefix) mặc định: dấu chấm than (!)\n` +
+      `Gõ \`!help <command>\` để xem chi tiết một lệnh cụ thể.\n\n` +
+      `🧩 Nhóm chức năng chính:\n` +
+      `• Ví & Số dư: !balance, !deposit <sotien>, !withdraw <sotien>\n` +
+      `• Vay P2P (Borrower): !loan <sotien> <songay>, !checklist-loan, !transaction <loanId>, !repay <loanId>\n` +
+      `• Cho vay P2P (Lender): !checklist-loan, !loan-fund <loanId>, !transaction <loanId>\n` +
+      `• Khác: !score, !about, !ping\n\n` +
+      `🔁 Quy trình vay nhanh (ví dụ):\n` +
+      `1️⃣ Borrower: !loan 15000 30  → tạo yêu cầu vay 15,000 trong 30 ngày\n` +
+      `2️⃣ Lender: !checklist-loan  → xem danh sách yêu cầu\n` +
+      `3️⃣ Lender: !loan-fund <loanId>  → giải ngân khoản vay\n` +
+      `4️⃣ Borrower: !transaction <loanId>  → theo dõi khoản vay\n` +
+      `5️⃣ Borrower: !repay <loanId>  → tất toán khi đủ tiền\n\n` +
+      `⚠️ Điều kiện & Lưu ý:\n` +
+      `• Mọi giao dịch < 1,000 tokens bị từ chối.\n` +
+      `• Phí cố định khi vay: 5,000 tokens (trừ lúc giải ngân).\n` +
+      `• Lãi suất tính theo năm, quy đổi pro‑rata theo số ngày thực tế.\n` +
+      `• Trả sớm: lãi chỉ tính đến ngày trả.\n` +
+      `• Lender phải nạp (!deposit) đủ số token vào bot trước khi dùng !loan-fund.\n` +
+      `• Borrower phải có đủ token nội bộ & ví khi tất toán (!repay).\n\n`;
+
     categories.forEach((commandNames, category) => {
       messageContent += `**${category}:**\n`;
-      messageContent += commandNames.map(cmd => `• \`!${cmd}\``).join('\n');
+      messageContent += commandNames.map((cmd) => `• \`!${cmd}\``).join('\n');
       messageContent += '\n\n';
     });
 
-    messageContent += `Use \`!help [command]\` for detailed information about a specific command.`;
+    messageContent += `Gõ \`!help <command>\` để xem hướng dẫn chi tiết hơn cho từng lệnh.`;
 
     return this.replyMessageGenerate(
       {

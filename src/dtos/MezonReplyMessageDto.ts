@@ -22,7 +22,7 @@ export interface ReplyMezonMessage {
   messOptions?: {
     [x: string]: any;
   };
-  refs?: Array<ApiMessageRef>; // user for send message to user
+  refs?: Array<ApiMessageRef>;
   sender_id?: string;
   anonymous_message?: boolean;
   mention_everyone?: boolean;

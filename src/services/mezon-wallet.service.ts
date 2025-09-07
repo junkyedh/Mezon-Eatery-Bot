@@ -1,0 +1,183 @@
+// src/services/mezon-wallet.service.ts
+import { Injectable } from '@nestjs/common';
+import { MezonClientService } from '@app/services/mezon-client.service';
+
+export type WalletTransferResult = {
+  success: boolean;
+  externalTxId?: string;
+  error?: string;
+  balanceAfter?: number;
+};
+
+@Injectable()
+export class MezonWalletService {
+  constructor(private readonly mezon: MezonClientService) {}
+
+  // Lấy Mezon userId của bot (từ kết quả login)
+  getBotUserId(): string | undefined {
+    return this.mezon.getBotUserId();
+  }
+
+  async getUserBalance(mezonUserId: string): Promise<number> {
+    try {
+      const clan = await this.mezon.getClient().clans.fetch('0');
+      const user: any = await clan.users.fetch(mezonUserId);
+      console.log(
+        '[MezonWalletService] Fetched user basic keys:',
+        Object.keys(user),
+      );
+
+      // Inspect prototype for potential balance-related methods
+      const proto = Object.getPrototypeOf(user) || {};
+      const protoProps = Object.getOwnPropertyNames(proto);
+      console.log('[MezonWalletService] User prototype props:', protoProps);
+
+      if (typeof user.balance === 'number') {
+        return user.balance;
+      }
+
+      const candidateMethods = [
+        'getBalance',
+        'balance',
+        'getTokenBalance',
+        'fetchBalance',
+        'fetchWallet',
+        'getWallet',
+      ];
+
+      for (const m of candidateMethods) {
+        if (typeof user[m] === 'function') {
+          try {
+            const v = await user[m]();
+            if (typeof v === 'number') {
+              console.log(
+                `[MezonWalletService] Balance resolved via method ${m}:`,
+                v,
+              );
+              return v;
+            }
+            if (v && typeof v === 'object') {
+              for (const k of ['balance', 'amount', 'available']) {
+                if (typeof v[k] === 'number') {
+                  console.log(
+                    `[MezonWalletService] Balance resolved via method ${m} -> field ${k}:`,
+                    v[k],
+                  );
+                  return v[k];
+                }
+              }
+            }
+          } catch (innerErr) {
+            console.log(
+              `[MezonWalletService] Method ${m} invocation failed`,
+              innerErr,
+            );
+          }
+        }
+      }
+
+      console.warn(
+        '[MezonWalletService] Unable to determine user balance from SDK – returning -1 sentinel',
+      );
+      return -1;
+    } catch (error) {
+      console.error('Error fetching user balance from Mezon:', error);
+      return -1;
+    }
+  }
+
+  async transferUserToBot(args: {
+    fromUserId: string;
+    amount: number;
+    idemKey: string;
+  }): Promise<WalletTransferResult> {
+    if (args.amount < 1000) {
+      return { success: false, error: 'Minimum amount is 1,000 tokens' };
+    }
+    try {
+      const clan = await this.mezon.getClient().clans.fetch('0');
+      const user = await clan.users.fetch(args.fromUserId);
+      const res = await user.sendToken({
+        amount: args.amount,
+        note: `Transfer to bot with idempotency key: ${args.idemKey}`,
+      });
+      return {
+        success: true,
+        externalTxId: res.transactionId,
+        balanceAfter: res.balanceAfter,
+      };
+    } catch (error: any) {
+      try {
+        if (error?.response) {
+          const bodyText = await error.response.text();
+          console.error('Mezon sendToken user->bot error body:', bodyText);
+        }
+      } catch {}
+      console.error('Error transferring tokens from user to bot:', error);
+      return { success: false, error: 'Transfer failed' };
+    }
+  }
+
+  async transferBotToUser(args: {
+    toUserId: string;
+    amount: number;
+    idemKey: string;
+  }): Promise<WalletTransferResult> {
+    if (args.amount < 1000) {
+      return { success: false, error: 'Minimum amount is 1,000 tokens' };
+    }
+    try {
+      const clan = await this.mezon.getClient().clans.fetch('0');
+      // Instead of botUser.sendToken, fetch target user and call sendToken (SDK pattern)
+      const targetUser = await clan.users.fetch(args.toUserId);
+      const res = await targetUser.sendToken({
+        amount: args.amount,
+        note: `Bot payout with idempotency key: ${args.idemKey}`,
+      });
+      return {
+        success: true,
+        externalTxId: res.transactionId,
+        balanceAfter: res.balanceAfter,
+      };
+    } catch (error: any) {
+      try {
+        if (error?.response) {
+          const bodyText = await error.response.text();
+          console.error('Mezon sendToken error body:', bodyText);
+        }
+      } catch {}
+      console.error('Error transferring tokens from bot to user:', error);
+      return { success: false, error: 'Transfer failed' };
+    }
+  }
+
+  async transferBetweenUsersViaBot(args: {
+    fromUserId: string;
+    toUserId: string;
+    amount: number;
+    idemKey: string;
+  }): Promise<{
+    step1?: string;
+    step2?: string;
+    success: boolean;
+    error?: string;
+  }> {
+    // 1) from -> bot
+    const s1 = await this.transferUserToBot({
+      fromUserId: args.fromUserId,
+      amount: args.amount,
+      idemKey: args.idemKey + ':1',
+    });
+    if (!s1.success) return { success: false, error: s1.error };
+
+    // 2) bot -> to
+    const s2 = await this.transferBotToUser({
+      toUserId: args.toUserId,
+      amount: args.amount,
+      idemKey: args.idemKey + ':2',
+    });
+    if (!s2.success) return { success: false, error: s2.error };
+
+    return { success: true, step1: s1.externalTxId, step2: s2.externalTxId };
+  }
+}

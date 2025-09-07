@@ -110,8 +110,12 @@ export class CreateNCCCreditTables1703123456789 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop foreign key constraints
-    await queryRunner.query(`ALTER TABLE "loans" DROP CONSTRAINT "FK_loans_userId"`);
-    await queryRunner.query(`ALTER TABLE "transactions" DROP CONSTRAINT "FK_transactions_userId"`);
+    await queryRunner.query(
+      `ALTER TABLE "loans" DROP CONSTRAINT "FK_loans_userId"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "transactions" DROP CONSTRAINT "FK_transactions_userId"`,
+    );
 
     // Drop indexes
     await queryRunner.query(`DROP INDEX "IDX_loans_status"`);
@@ -129,4 +133,4 @@ export class CreateNCCCreditTables1703123456789 implements MigrationInterface {
     await queryRunner.query(`DROP TYPE "public"."transaction_type_enum"`);
     await queryRunner.query(`DROP TABLE "users"`);
   }
-} 
+}

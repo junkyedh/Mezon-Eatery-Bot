@@ -38,7 +38,7 @@ export class BotGateway {
       this.eventEmitter.emit(Events.TokenSend, data);
     });
 
-    this.client.onNotification((data) => {});
+    this.client.onNotification(() => {});
 
     this.client.onMessageButtonClicked((data) => {
       this.eventEmitter.emit(Events.MessageButtonClicked, data);

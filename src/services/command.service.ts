@@ -1,6 +1,5 @@
 import { CommandMessage } from '@app/command/common/command.abstract';
 import { CommandStorage } from '@app/command/common/command.storage';
-import { HelpCommand } from '@app/command/help.command';
 import { CommandInterface } from '@app/types/command.types';
 import { extractMessage } from '@app/utils/message';
 import { Injectable } from '@nestjs/common';
@@ -24,5 +23,13 @@ export class CommandService implements CommandInterface {
         return command.execute(args, message);
       }
     }
+    // Unknown command fallback message (public)
+    return {
+      msg: {
+        t: `❌ Lệnh không hợp lệ: !${commandName}\nGõ !help để xem danh sách lệnh khả dụng.`,
+      },
+      channel_id: message.channel_id,
+      is_public: true,
+    } as any;
   }
 }

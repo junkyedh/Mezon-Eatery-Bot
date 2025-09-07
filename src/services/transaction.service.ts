@@ -1,9 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Transaction, TransactionType, TransactionStatus } from '@app/entities/transaction.entity';
+import {
+  Transaction,
+  TransactionType,
+  TransactionStatus,
+} from '@app/entities/transaction.entity';
 import { UserService } from './user.service';
-import { PoolService } from './pool.service';
 
 @Injectable()
 export class TransactionService {
@@ -11,41 +14,53 @@ export class TransactionService {
     @InjectRepository(Transaction)
     private transactionRepository: Repository<Transaction>,
     private userService: UserService,
-    private poolService: PoolService,
   ) {}
 
-  async deposit(userId: string, amount: number): Promise<Transaction> {
+  async deposit(
+    userId: string, // internal user.id
+    amount: number,
+    externalTxId?: string,
+    idempotencyKey?: string,
+    source: 'mezon' | 'manual' = 'manual',
+  ): Promise<Transaction> {
     // Validate minimum amount
     if (amount < 1000) {
       throw new Error('Minimum deposit amount is 1,000 tokens');
     }
 
-    const transaction = this.transactionRepository.create({
-      userId,
-      type: TransactionType.DEPOSIT,
-      amount,
-      status: TransactionStatus.COMPLETED,
-      description: `Deposit ${amount} tokens`,
-    });
+    return await this.transactionRepository.manager.transaction(
+      async (entityManager) => {
+        const transaction = entityManager.create(Transaction, {
+          userId,
+          type: TransactionType.DEPOSIT,
+          amount,
+          status: TransactionStatus.COMPLETED,
+          description: `Deposit ${amount} tokens`,
+          externalTxId,
+          idempotencyKey,
+          source,
+        });
 
-    await this.transactionRepository.save(transaction);
-
-    // Update user balance
-    await this.userService.updateBalance(userId, amount);
-
-    // Update pool balance
-    await this.poolService.addToPool(amount);
-
-    return transaction;
+        await entityManager.save(transaction);
+        await this.userService.updateBalance(userId, amount);
+        return transaction;
+      },
+    );
   }
 
-  async withdraw(userId: string, amount: number): Promise<Transaction> {
-    // Validate minimum amount
+  async withdraw(
+    userId: string, // internal user.id
+    amount: number,
+    externalTxId?: string,
+    idempotencyKey?: string,
+    source: 'mezon' | 'manual' = 'manual',
+  ): Promise<Transaction> {
+    // Validate minimum amount (mirrors SDK guard)
     if (amount < 1000) {
       throw new Error('Minimum withdrawal amount is 1,000 tokens');
     }
 
-    const user = await this.userService.getUserByMezonId(userId);
+    const user = await this.userService.getUserById(userId);
     if (!user) {
       throw new Error('User not found');
     }
@@ -54,23 +69,24 @@ export class TransactionService {
       throw new Error('Insufficient balance');
     }
 
-    const transaction = this.transactionRepository.create({
-      userId: user.id,
-      type: TransactionType.WITHDRAW,
-      amount,
-      status: TransactionStatus.COMPLETED,
-      description: `Withdraw ${amount} tokens`,
-    });
+    return await this.transactionRepository.manager.transaction(
+      async (entityManager) => {
+        const transaction = entityManager.create(Transaction, {
+          userId,
+          type: TransactionType.WITHDRAW,
+          amount,
+          status: TransactionStatus.COMPLETED,
+          description: `Withdraw ${amount} tokens`,
+          externalTxId,
+          idempotencyKey,
+          source,
+        });
 
-    await this.transactionRepository.save(transaction);
-
-    // Update user balance
-    await this.userService.updateBalance(user.id, -amount);
-
-    // Update pool balance
-    await this.poolService.removeFromPool(amount);
-
-    return transaction;
+        await entityManager.save(transaction);
+        await this.userService.updateBalance(userId, -amount);
+        return transaction;
+      },
+    );
   }
 
   async getTransactionHistory(userId: string): Promise<Transaction[]> {
@@ -80,4 +96,32 @@ export class TransactionService {
       take: 10,
     });
   }
-} 
+
+  async findByIdempotencyKey(idemKey: string): Promise<Transaction | null> {
+    return this.transactionRepository.findOne({
+      where: { idempotencyKey: idemKey },
+    });
+  }
+
+  async findByExternalTxId(externalTxId: string): Promise<Transaction | null> {
+    return this.transactionRepository.findOne({
+      where: { externalTxId },
+    });
+  }
+
+  async recordDeposit({
+    userId,
+    amount,
+    externalTxId,
+    idempotencyKey,
+    source = 'mezon',
+  }: {
+    userId: string;
+    amount: number;
+    externalTxId?: string;
+    idempotencyKey?: string;
+    source?: 'mezon' | 'manual';
+  }): Promise<Transaction> {
+    return this.deposit(userId, amount, externalTxId, idempotencyKey, source);
+  }
+}

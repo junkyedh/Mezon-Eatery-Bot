@@ -30,7 +30,7 @@ export function replyMessageGenerate(
       )),
   );
 
-  let messageContent = {
+  const messageContent = {
     t: 'messageContent' in replayConent ? replayConent['messageContent'] : '',
   };
 

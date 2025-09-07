@@ -35,6 +35,18 @@ export class UserService {
     });
   }
 
+  async getUserById(id: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { id },
+      relations: ['loans', 'transactions'],
+    });
+  }
+
+  async getUsersByIds(ids: string[]): Promise<User[]> {
+    if (!ids.length) return [];
+    return this.userRepository.find({ where: ids.map((id) => ({ id })) });
+  }
+
   async updateNCScore(userId: string, points: number): Promise<void> {
     await this.userRepository
       .createQueryBuilder()
@@ -61,7 +73,11 @@ export class UserService {
     await this.userRepository.update(userId, { isBlocked: false });
   }
 
-  calculateNCScore(jobLevel: string, tenure: number, repaymentHistory: number): number {
+  calculateNCScore(
+    jobLevel: string,
+    tenure: number,
+    repaymentHistory: number,
+  ): number {
     let score = 100000; // Base score
 
     // Job level bonus
@@ -85,4 +101,4 @@ export class UserService {
 
     return Math.max(score, 100000); // Minimum 100,000
   }
-} 
+}

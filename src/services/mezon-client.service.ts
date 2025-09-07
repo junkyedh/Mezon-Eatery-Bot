@@ -16,6 +16,7 @@ export class MezonClientService {
   private readonly logger = new Logger(MezonClientService.name);
   private client: MezonClient;
   public token: string;
+  private botUserId: string | undefined;
 
   constructor(clientConfigs: MezonClientConfig) {
     this.client = new MezonClient(clientConfigs.token);
@@ -31,6 +32,7 @@ export class MezonClientService {
       this.logger.log(SUCCESS_MESSAGES.CLIENT_AUTHENTICATED, result);
       const data = JSON.parse(result);
       this.token = data?.token;
+      this.botUserId = data?.user_id;
     } catch (error) {
       this.logger.error(ERROR_MESSAGES.CLIENT_AUTHENTICATION, error);
       throw error;
@@ -39,6 +41,10 @@ export class MezonClientService {
 
   getClient(): MezonClient {
     return this.client;
+  }
+
+  getBotUserId(): string | undefined {
+    return this.botUserId;
   }
 
   async sendMessage(replyMessage: ReplyMezonMessage): Promise<any> {
