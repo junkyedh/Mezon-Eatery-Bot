@@ -26,7 +26,7 @@ export class BalanceCommand extends CommandMessage {
         message.sender_id,
         message.username || 'Unknown User',
       );
-      // Tính thâm niên (năm) dựa trên thời điểm user tham gia (proxy: createdAt trong hệ thống)
+      // Calculate tenure
       const now = Date.now();
       const createdTime = user.createdAt
         ? new Date(user.createdAt).getTime()
@@ -38,21 +38,17 @@ export class BalanceCommand extends CommandMessage {
       const tenureDisplay =
         tenureYears < 1 ? '< 1 năm' : `${Math.floor(tenureYears)} năm`;
 
-      // Active loan summary (if any)
+      // Active loan summary
       const activeLoan = await this.loanService.getActiveLoan(
         message.sender_id,
       );
       let loanLines: string[] = [];
-      let capacityLines: string[] = [];
-      const baseCapacity = user.ncScore * 0.5;
-      let remainingCapacity = baseCapacity;
       if (activeLoan) {
         const acc = this.loanService.calculateAccruedInterest(activeLoan);
         const totalDue = activeLoan.amount + acc.interestAccrued;
-        remainingCapacity = Math.max(baseCapacity - activeLoan.amount, 0);
         loanLines = [
           '📌 **Khoản vay đang hoạt động**',
-          `🆔 Loan: ${activeLoan.id}`,
+          `🆔 Mã giao dịch: ${activeLoan.id}`,
           `💰 Gốc: ${formatToken(activeLoan.amount)}`,
           `📈 Lãi suất năm: ${activeLoan.interestRate}%`,
           `💸 Lãi tạm tính: ${formatToken(acc.interestAccrued)} tokens`,
@@ -60,21 +56,13 @@ export class BalanceCommand extends CommandMessage {
           `📆 Đáo hạn: ${activeLoan.dueDate.toLocaleDateString('vi-VN')} (còn ${Math.max(acc.totalTermDays - acc.elapsedDays, 0)} ngày)`,
         ];
       }
-      capacityLines = [
-        '📊 **Hạn mức vay**',
-        `• Hạn mức cơ sở: ${formatToken(baseCapacity)} tokens`,
-        `• Hạn mức còn lại: ${formatToken(remainingCapacity)} tokens`,
-      ];
-
       const messageContent = [
         '💰 **NCC Credit Balance**',
-        `👤 **Người dùng:** ${user.username}`,
-        `💳 **Số dư NCC Credit:** ${formatToken(user.balance)} tokens`,
-        `🎯 **NC Score:** ${formatToken(user.ncScore)} điểm`,
-        `🏢 **Vai trò (Role):** ${user.jobLevel || 'Chưa cập nhật'}`,
-        `⏰ **Thâm niên Mezon:** ${tenureDisplay}`,
+        `👤 Người dùng: ${user.username}`,
+        `💳 Số dư NCC Credit: ${formatToken(user.balance)} tokens`,
+        `🏢 Vai trò (Role): ${user.jobLevel || 'Chưa cập nhật'}`,
+        `⏰ Thâm niên Mezon: ${tenureDisplay}`,
         ...loanLines,
-        ...capacityLines,
       ].join('\n');
 
       return this.replyMessageGenerate({ messageContent }, message);

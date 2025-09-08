@@ -93,11 +93,11 @@ export class LoanService {
 
     if (lender.id === loan.userId)
       throw new Error('Không thể tự cho chính mình vay');
-    // Kiểm tra số dư nội bộ
+    // Check internal balance
     if (lender.balance < loan.amount)
       throw new Error('Số dư nội bộ không đủ để cho vay');
 
-    // Kiểm tra số dư thực tế trên ví Mezon (nếu SDK trả về -1 thì bỏ qua)
+    // Check actual balance on Mezon wallet (if SDK returns -1 then ignore)
     const chainBalance = await this.wallet.getUserBalance(lender.mezonUserId);
     if (chainBalance !== -1 && chainBalance < loan.amount) {
       throw new Error('Số dư ví Mezon không đủ để cho vay');
@@ -107,8 +107,8 @@ export class LoanService {
     loan.status = LoanStatus.ACTIVE;
     loan.startDate = new Date();
     loan.approvedAt = new Date();
-    // Thực hiện chuyển token: lender -> bot, rồi bot -> borrower (trừ phí)
-    // Idempotency key đơn giản: loanId + timestamp phases
+    // Perform token transfers: lender -> bot, then bot -> borrower (minus fee)
+    // Idempotency key simple: loanId + timestamp phases
     const idemBase = `fund:${loan.id}`;
     const toBot = await this.wallet.transferUserToBot({
       fromUserId: lender.mezonUserId,
@@ -135,7 +135,7 @@ export class LoanService {
       }
     }
 
-    // Cập nhật số dư nội bộ phản ánh biến động (giữ fee ở bot)
+    // Update internal balances to reflect changes (keep fee in bot)
     await this.userService.updateBalance(lender.id, -loan.amount);
     await this.userService.updateBalance(loan.userId, disburseAmount);
     return this.loanRepository.save(loan);
@@ -166,7 +166,7 @@ export class LoanService {
     if (borrower.balance < totalDue)
       throw new Error('Số dư nội bộ không đủ để trả nợ');
 
-    // Kiểm tra số dư ví thực tế
+    // Check actual balance on Mezon wallet (if SDK returns -1 then ignore)
     const chainBalance = await this.wallet.getUserBalance(borrower.mezonUserId);
     if (chainBalance !== -1 && chainBalance < totalDue) {
       throw new Error('Số dư ví Mezon không đủ để trả nợ');
@@ -284,9 +284,6 @@ export class LoanService {
       await this.loanRepository.update(activeLoan.id, {
         status: LoanStatus.COMPLETED,
       });
-
-      // Add positive points to NC Score for timely payment
-      await this.userService.updateNCScore(user.id, 5000);
     }
   }
 
@@ -324,9 +321,6 @@ export class LoanService {
           status: LoanStatus.DEFAULTED,
         });
       }
-
-      // Deduct points from NC Score for missed payment
-      await this.userService.updateNCScore(loan.userId, -10000);
     }
   }
 }

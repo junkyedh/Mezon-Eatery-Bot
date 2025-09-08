@@ -85,17 +85,17 @@ export class WithdrawCommand extends CommandMessage {
         console.error('DB update failed after successful withdraw:', dbErr);
         const messageContent =
           `⚠️ Token đã được chuyển nhưng cập nhật số dư tạm thời chưa thành công.\n` +
-          `💰 **Số lượng:** ${formatToken(amount)} tokens\n` +
-          `🔗 **External Tx ID:** ${walletResult.externalTxId || 'N/A'}\n` +
+          `💰 Số lượng: ${formatToken(amount)} tokens\n` +
+          `🔗 External Tx ID: ${walletResult.externalTxId || 'N/A'}\n` +
           `🛠️ Hệ thống sẽ tự đồng bộ trong ít phút.`;
         return this.replyMessageGenerate({ messageContent }, message);
       }
 
       const messageContent =
-        `✅ **Rút token thành công!**\n\n` +
-        `💰 **Số lượng:** ${formatToken(amount)} tokens\n` +
-        `📊 **Số dư hiện tại:** ${formatToken(updatedBalance)} tokens\n` +
-        `🆔 **Transaction ID:** ${transactionId}\n` +
+        `✅ **Rút Token Thành Công!**\n` +
+        `💰 Số lượng: ${formatToken(amount)} tokens\n` +
+        `📊 Số dư hiện tại: ${formatToken(updatedBalance)} tokens\n` +
+        `🆔 Transaction ID: ${transactionId}\n` +
         `💡 *Token đã được chuyển về ví của bạn.*`;
 
       return this.replyMessageGenerate({ messageContent }, message);

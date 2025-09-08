@@ -62,7 +62,7 @@ export class LoanTransactionCommand extends CommandMessage {
         `📈 Lãi suất năm: ${loan.interestRate}%`,
         `⏱ Kỳ hạn: ${loan.termQuantity} ${loan.termUnit}`,
         `📆 Đáo hạn: ${loan.dueDate.toLocaleDateString('vi-VN')}`,
-        `💸 Lãi tạm tính: ${formatToken(info.interestAccrued)} (trả sớm: ${info.early ? 'Có' : 'Không'})`,
+        `💸 Lãi tạm tính: ${formatToken(info.interestAccrued)}`,
         `📊 Trạng thái: ${statusMap[loan.status] || loan.status}`,
       );
       const messageContent = lines.join('\n');

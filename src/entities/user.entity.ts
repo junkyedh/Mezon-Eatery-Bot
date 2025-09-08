@@ -20,9 +20,6 @@ export class User {
   @Column()
   username: string;
 
-  @Column({ default: 100000 })
-  ncScore: number;
-
   @Column({ default: 0 })
   balance: number;
 

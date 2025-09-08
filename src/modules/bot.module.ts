@@ -3,7 +3,6 @@ import { PingCommand } from '@app/command/ping.command';
 import { AboutCommand } from '@app/command/about.command';
 import { DepositCommand } from '@app/command/deposit.command';
 import { WithdrawCommand } from '@app/command/withdraw.command';
-import { ScoreCommand } from '@app/command/score.command';
 import { LoanRequestCommand } from '@app/command/loan-request.command';
 import { LoanChecklistCommand } from '@app/command/loan-checklist.command';
 import { LoanFundCommand } from '@app/command/loan-fund.command';
@@ -59,7 +58,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     AboutCommand,
     DepositCommand,
     WithdrawCommand,
-    ScoreCommand,
     LoanRequestCommand,
     LoanChecklistCommand,
     LoanFundCommand,
