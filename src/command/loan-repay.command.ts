@@ -49,14 +49,14 @@ export class LoanRepayCommand extends CommandMessage {
           lenderUser?.username || result.loan.lenderUserId.substring(0, 6);
       }
       const lines: string[] = [
-        '✅ Đã tất toán khoản vay',
+        '✅ **Đã Tất Toán Khoản Vay**\n',
         `🆔 Giao dịch vay: ${result.loan.id}`,
         `👥 Người vay: @${borrowerName}`,
       ];
       if (lenderName) lines.push(`💼 Người cho vay: @${lenderName}`);
       lines.push(
         `💰 Gốc đã trả: ${formatToken(result.principalPortion)}`,
-        `📈 Lãi đã trả: ${formatToken(result.interestPortion)}${result.early ? ' (trả sớm)' : ''}`,
+        `📈 Lãi đã trả: ${formatToken(result.interestPortion)}`,
         `🧾 Phí ban đầu: ${formatToken(result.fee)}`,
         `💸 Tổng đã trả: ${formatToken(result.totalDue)}`,
       );

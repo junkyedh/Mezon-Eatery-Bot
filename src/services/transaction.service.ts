@@ -17,7 +17,7 @@ export class TransactionService {
   ) {}
 
   async deposit(
-    userId: string, // internal user.id
+    userId: string,
     amount: number,
     externalTxId?: string,
     idempotencyKey?: string,
@@ -49,7 +49,7 @@ export class TransactionService {
   }
 
   async withdraw(
-    userId: string, // internal user.id
+    userId: string,
     amount: number,
     externalTxId?: string,
     idempotencyKey?: string,

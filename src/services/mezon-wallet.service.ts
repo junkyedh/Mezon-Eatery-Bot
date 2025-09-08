@@ -13,7 +13,7 @@ export type WalletTransferResult = {
 export class MezonWalletService {
   constructor(private readonly mezon: MezonClientService) {}
 
-  // Lấy Mezon userId của bot (từ kết quả login)
+  // Get Mezon bot user ID from config/SDK
   getBotUserId(): string | undefined {
     return this.mezon.getBotUserId();
   }

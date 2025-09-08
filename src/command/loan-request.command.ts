@@ -21,7 +21,7 @@ export class LoanRequestCommand extends CommandMessage {
   async execute(args: string[], message: ChannelMessage) {
     if (args.length < 2) {
       const note = [
-        '📋 Hướng dẫn yêu cầu vay',
+        '📋 **Hướng Dẫn Yêu Cầu Vay**\n',
         'ℹ️ Cú pháp: `!loan <sotien> <songay>`',
         'Ví dụ: `!loan 15000 30`',
         '—',
