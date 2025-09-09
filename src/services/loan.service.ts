@@ -6,6 +6,8 @@ import { UserService } from './user.service';
 import { PoolService } from './pool.service';
 import { TransactionService } from './transaction.service';
 import { MezonWalletService } from './mezon-wallet.service';
+import { plainToInstance } from 'class-transformer';
+import { LoanDto } from '@app/dtos/loan.dto';
 
 @Injectable()
 export class LoanService {
@@ -240,7 +242,8 @@ export class LoanService {
   }
 
   async getLoanById(id: string): Promise<Loan | null> {
-    return this.loanRepository.findOne({ where: { id } });
+    const loan = this.loanRepository.findOne({ where: { id } });
+    return plainToInstance(LoanDto, loan);
   }
 
   async payLoan(mezonUserId: string, amount: number): Promise<void> {
