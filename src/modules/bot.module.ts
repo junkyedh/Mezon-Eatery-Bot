@@ -29,6 +29,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ListAllCommand } from '@app/command/list-all.command';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     LoanTransactionCommand,
     LoanRepayCommand,
     BalanceCommand,
+    ListAllCommand,
   ],
   controllers: [],
 })
