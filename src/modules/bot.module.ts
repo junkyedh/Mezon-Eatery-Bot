@@ -3,12 +3,14 @@ import { PingCommand } from '@app/command/ping.command';
 import { AboutCommand } from '@app/command/about.command';
 import { DepositCommand } from '@app/command/deposit.command';
 import { WithdrawCommand } from '@app/command/withdraw.command';
+import { ScoreCommand } from '@app/command/score.command';
 import { LoanRequestCommand } from '@app/command/loan-request.command';
 import { LoanChecklistCommand } from '@app/command/loan-checklist.command';
 import { LoanFundCommand } from '@app/command/loan-fund.command';
 import { LoanTransactionCommand } from '@app/command/loan-transaction.command';
 import { LoanRepayCommand } from '@app/command/loan-repay.command';
 import { BalanceCommand } from '@app/command/balance.command';
+import { AdminCommand } from '@app/command/admin.command';
 import { ClientConfigService } from '@app/config/client.config';
 import { BotGateway } from '@app/gateway/bot.gateway';
 import { EventListenerChannelMessage } from '@app/listeners';
@@ -58,12 +60,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     AboutCommand,
     DepositCommand,
     WithdrawCommand,
+    ScoreCommand,
     LoanRequestCommand,
     LoanChecklistCommand,
     LoanFundCommand,
     LoanTransactionCommand,
     LoanRepayCommand,
     BalanceCommand,
+    AdminCommand,
   ],
   controllers: [],
 })

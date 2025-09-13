@@ -54,7 +54,7 @@ export class HelpCommand extends CommandMessage {
       `• Ví & Số dư: !balance, !deposit <sotien>, !withdraw <sotien>\n` +
       `• Vay P2P (Borrower): !loan <sotien> <songay>, !checklist-loan, !transaction <loanId>, !repay <loanId>\n` +
       `• Cho vay P2P (Lender): !checklist-loan, !loan-fund <loanId>, !transaction <loanId>\n` +
-      `• Khác: !about, !ping\n\n` +
+      `• Khác: !score, !about, !ping\n\n` +
       `🔁 Quy trình vay nhanh (ví dụ):\n` +
       `1️⃣ Borrower: !loan 15000 30  → tạo yêu cầu vay 15,000 trong 30 ngày\n` +
       `2️⃣ Lender: !checklist-loan  → xem danh sách yêu cầu\n` +

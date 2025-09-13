@@ -6,8 +6,6 @@ import { UserService } from './user.service';
 import { PoolService } from './pool.service';
 import { TransactionService } from './transaction.service';
 import { MezonWalletService } from './mezon-wallet.service';
-import { plainToInstance } from 'class-transformer';
-import { LoanDto } from '@app/dtos/loan.dto';
 
 @Injectable()
 export class LoanService {
@@ -95,11 +93,11 @@ export class LoanService {
 
     if (lender.id === loan.userId)
       throw new Error('Không thể tự cho chính mình vay');
-    // Check internal balance
+    // Kiểm tra số dư nội bộ
     if (lender.balance < loan.amount)
       throw new Error('Số dư nội bộ không đủ để cho vay');
 
-    // Check actual balance on Mezon wallet (if SDK returns -1 then ignore)
+    // Kiểm tra số dư thực tế trên ví Mezon (nếu SDK trả về -1 thì bỏ qua)
     const chainBalance = await this.wallet.getUserBalance(lender.mezonUserId);
     if (chainBalance !== -1 && chainBalance < loan.amount) {
       throw new Error('Số dư ví Mezon không đủ để cho vay');
@@ -109,8 +107,8 @@ export class LoanService {
     loan.status = LoanStatus.ACTIVE;
     loan.startDate = new Date();
     loan.approvedAt = new Date();
-    // Perform token transfers: lender -> bot, then bot -> borrower (minus fee)
-    // Idempotency key simple: loanId + timestamp phases
+    // Thực hiện chuyển token: lender -> bot, rồi bot -> borrower (trừ phí)
+    // Idempotency key đơn giản: loanId + timestamp phases
     const idemBase = `fund:${loan.id}`;
     const toBot = await this.wallet.transferUserToBot({
       fromUserId: lender.mezonUserId,
@@ -137,7 +135,7 @@ export class LoanService {
       }
     }
 
-    // Update internal balances to reflect changes (keep fee in bot)
+    // Cập nhật số dư nội bộ phản ánh biến động (giữ fee ở bot)
     await this.userService.updateBalance(lender.id, -loan.amount);
     await this.userService.updateBalance(loan.userId, disburseAmount);
     return this.loanRepository.save(loan);
@@ -168,7 +166,7 @@ export class LoanService {
     if (borrower.balance < totalDue)
       throw new Error('Số dư nội bộ không đủ để trả nợ');
 
-    // Check actual balance on Mezon wallet (if SDK returns -1 then ignore)
+    // Kiểm tra số dư ví thực tế
     const chainBalance = await this.wallet.getUserBalance(borrower.mezonUserId);
     if (chainBalance !== -1 && chainBalance < totalDue) {
       throw new Error('Số dư ví Mezon không đủ để trả nợ');
@@ -242,8 +240,7 @@ export class LoanService {
   }
 
   async getLoanById(id: string): Promise<Loan | null> {
-    const loan = this.loanRepository.findOne({ where: { id } });
-    return plainToInstance(LoanDto, loan);
+    return this.loanRepository.findOne({ where: { id } });
   }
 
   async payLoan(mezonUserId: string, amount: number): Promise<void> {
@@ -287,6 +284,9 @@ export class LoanService {
       await this.loanRepository.update(activeLoan.id, {
         status: LoanStatus.COMPLETED,
       });
+
+      // Add positive points to NC Score for timely payment
+      await this.userService.updateNCScore(user.id, 5000);
     }
   }
 
@@ -324,6 +324,25 @@ export class LoanService {
           status: LoanStatus.DEFAULTED,
         });
       }
+
+      // Deduct points from NC Score for missed payment
+      await this.userService.updateNCScore(loan.userId, -10000);
     }
+  }
+
+  async getActiveLoansAmount(): Promise<number> {
+    const result = await this.loanRepository
+      .createQueryBuilder('loan')
+      .select('SUM(loan.amount)', 'total')
+      .where('loan.status = :status', { status: 'active' })
+      .getRawOne();
+    
+    return Math.max(0, Number(result?.total || 0));
+  }
+
+  async resetLoanToActive(loanId: string): Promise<void> {
+    await this.loanRepository.update(loanId, {
+      status: LoanStatus.ACTIVE
+    });
   }
 }

@@ -57,12 +57,17 @@ export class LoanTransactionCommand extends CommandMessage {
         `👥 Người vay: @${borrowerName}`,
       ];
       if (lenderName) lines.push(`💼 Người cho vay: @${lenderName}`);
+      
+      // Calculate total due amount
+      const totalDue = loan.amount + info.interestAccrued;
+      
       lines.push(
         `💰 Số tiền gốc: ${formatToken(loan.amount)}`,
         `📈 Lãi suất năm: ${loan.interestRate}%`,
         `⏱ Kỳ hạn: ${loan.termQuantity} ${loan.termUnit}`,
         `📆 Đáo hạn: ${loan.dueDate.toLocaleDateString('vi-VN')}`,
         `💸 Lãi tạm tính: ${formatToken(info.interestAccrued)}`,
+        `💼 Tổng tạm phải trả: ${formatToken(totalDue)}`,
         `📊 Trạng thái: ${statusMap[loan.status] || loan.status}`,
       );
       const messageContent = lines.join('\n');
