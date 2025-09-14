@@ -116,10 +116,11 @@ export class AdminCommand extends CommandMessage {
   async showPoolBalance(message: ChannelMessage) {
     try {
       const poolBalance = await this.poolService.getPoolBalance();
-      const feesCollected =
-        await this.loanService.getTotalFeesFromActiveAndCompletedLoans();
-
       const users = await this.userService.getUsersWithPositiveBalance();
+
+      const rawFees =
+        poolBalance.total - (poolBalance.available + poolBalance.loaned);
+      const feesLeft = Math.max(0, Math.round(Number(rawFees)));
 
       const messageLines = [
         '💰 **Pool Balance**',
@@ -141,10 +142,7 @@ export class AdminCommand extends CommandMessage {
         messageLines.push('👤 Không có user nào có balance dương');
       }
 
-      messageLines.push(
-        `• Đang cho vay: ${formatToken(poolBalance.loaned)}`,
-        `• Phí giao dịch: ${formatToken(feesCollected)}`,
-      );
+      messageLines.push(`• Phí giao dịch: ${formatToken(feesLeft)}`);
 
       const messageContent = messageLines.join('\n');
 
