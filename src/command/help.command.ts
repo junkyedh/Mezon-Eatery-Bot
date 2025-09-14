@@ -54,6 +54,17 @@ export class HelpCommand extends CommandMessage {
       `• Ví & Số dư: !balance, !deposit <sotien>, !withdraw <sotien>\n` +
       `• Vay P2P (Borrower): !loan <sotien> <songay>, !checklist-loan, !transaction <loanId>, !repay <loanId>\n` +
       `• Cho vay P2P (Lender): !checklist-loan, !loan-fund <loanId>, !transaction <loanId>\n` +
+      `• Admin (Delegate):\n` +
+      `   • !admin balance                → Xem số dư pool & phí giao dịch\n` +
+      `   • !admin withdraw <amount>      → Rút phí từ pool\n` +
+      `• Admin (Owner):\n` +
+      `   • !admin balance                → Xem số dư pool & phí giao dịch\n` +
+      `   • !admin withdraw <amount>      → Rút phí từ pool\n` +
+      `   • !admin assign @user           → Gán quyền admin tạm (delegate)\n` +
+      `   • !admin revoke @user|all       → Thu hồi quyền admin tạm\n` +
+      `   • !admin debug-fees             → Xem chi tiết cách tính phí (debug)\n` +
+      `   • !admin reset-pool             → Tính lại pool (debug)\n` +
+      `   • !admin reset-loan <loanId>    → Reset trạng thái loan (debug)\n` +
       `• Khác: !about, !ping\n\n` +
       `🔁 Quy trình vay nhanh (ví dụ):\n` +
       `1️⃣ Borrower: !loan 15000 30  → tạo yêu cầu vay 15,000 trong 30 ngày\n` +

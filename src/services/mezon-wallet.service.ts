@@ -102,7 +102,7 @@ export class MezonWalletService {
     idemKey: string;
   }): Promise<WalletTransferResult> {
     if (args.amount < 1000) {
-      return { success: false, error: 'Minimum amount is 1,000 tokens' };
+      return { success: false, error: 'Minimum amount is 1,000' };
     }
 
     try {
@@ -147,7 +147,7 @@ export class MezonWalletService {
     idemKey: string;
   }): Promise<WalletTransferResult> {
     if (args.amount < 1000) {
-      return { success: false, error: 'Minimum amount is 1,000 tokens' };
+      return { success: false, error: 'Minimum amount is 1,000' };
     }
     try {
       const clan = await this.mezon.getClient().clans.fetch('0');

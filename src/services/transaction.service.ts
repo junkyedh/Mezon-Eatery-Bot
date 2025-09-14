@@ -28,7 +28,7 @@ export class TransactionService {
     source: 'mezon' | 'manual' = 'manual',
   ): Promise<Transaction> {
     if (amount < 1000) {
-      throw new Error('Minimum deposit amount is 1,000 tokens');
+      throw new Error('Minimum deposit amount is 1,000');
     }
 
     if (idempotencyKey) {
@@ -45,7 +45,7 @@ export class TransactionService {
           type: TransactionType.DEPOSIT,
           amount,
           status: TransactionStatus.COMPLETED,
-          description: `Deposit ${amount} tokens`,
+          description: `Deposit ${amount}`,
           externalTxId,
           idempotencyKey,
           source,
@@ -69,7 +69,7 @@ export class TransactionService {
     source: 'mezon' | 'manual' = 'manual',
   ): Promise<Transaction> {
     if (amount < 1000) {
-      throw new Error('Minimum withdrawal amount is 1,000 tokens');
+      throw new Error('Minimum withdrawal amount is 1,000');
     }
 
     const user = await this.userService.getUserById(userId);
@@ -88,7 +88,7 @@ export class TransactionService {
           type: TransactionType.WITHDRAW,
           amount,
           status: TransactionStatus.COMPLETED,
-          description: `Withdraw ${amount} tokens`,
+          description: `Withdraw ${amount}`,
           externalTxId,
           idempotencyKey,
           source,

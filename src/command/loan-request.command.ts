@@ -25,14 +25,14 @@ export class LoanRequestCommand extends CommandMessage {
         'ℹ️ Cú pháp: `!loan <sotien> <songay>`',
         'Ví dụ: `!loan 15000 30`',
         '—',
-        '💸 Phí giao dịch cố định (trừ khi giải ngân): 5,000 tokens',
+        '💸 Phí giao dịch cố định (trừ khi giải ngân): 5,000',
         '💡 Lãi suất tham chiếu theo năm:',
         '• Tuần: 0.5%',
         '• Tháng: 3.5%',
         '• Quý: 3.8%',
         '• Năm: 4.85%',
         '👉 Lãi tính pro‑rata theo số ngày dựa trên kỳ hạn.',
-        'Sau khi tạo khoản vay sẽ vào hàng chờ để người khác `!chovay`.',
+        'Sau khi tạo khoản vay sẽ vào hàng chờ để người khác `!loan-fund`.',
       ].join('\n');
       return this.replyMessageGenerate({ messageContent: note }, message);
     }
@@ -105,14 +105,14 @@ export class LoanRequestCommand extends CommandMessage {
         '✅ Tạo yêu cầu vay thành công',
         `🆔 Mã khoản vay: ${loan.id}`,
         `👥 Người vay: @${borrowerName}`,
-        `💰 Số tiền vay: ${formatToken(amount)} tokens`,
+        `💰 Số tiền vay: ${formatToken(amount)}`,
         `📅 Kỳ hạn yêu cầu: ${days} ngày (${termQuantity} ${termUnit})`,
         `📆 Ngày đáo hạn dự kiến: ${dueDate.toLocaleDateString('vi-VN')}`,
         `💸 Phí giao dịch: ${formatToken(fee)} (trừ khi giải ngân)`,
-        `📈 Lãi suất tham chiếu: ${annualRate}%/năm (tạm tính lãi: ${formatToken(interest)} tokens)`,
-        `📊 Tổng phải trả (ước tính): ${formatToken(total)} tokens`,
-        `📤 Thực nhận (sau phí): ${formatToken(disbursed)} tokens`,
-        `🗂 Đã vào hàng chờ. Người cho vay dùng: !chovay ${loan.id}`,
+        `📈 Lãi suất tham chiếu: ${annualRate}%/năm (tạm tính lãi: ${formatToken(interest)})`,
+        `📊 Tổng phải trả (ước tính): ${formatToken(total)}`,
+        `📤 Thực nhận (sau phí): ${formatToken(disbursed)}`,
+        `🗂 Đã vào hàng chờ. Người cho vay dùng: !loan-fund ${loan.id}`,
         '⚠️ Lãi tính pro‑rata theo ngày; có thể thay đổi nếu tất toán sớm.',
       ].join('\n');
       return this.replyMessageGenerate({ messageContent }, message);
