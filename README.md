@@ -70,7 +70,7 @@ A comprehensive Peer-to-Peer lending system built with NestJS and TypeScript for
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/junkyedh/Mezon-Eatery-Bot
+git clone https://github.com/junkyedh/NCC-Credit-System-MezonBot.git
 cd SGI
 ```
 

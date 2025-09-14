@@ -44,7 +44,7 @@ export class AboutCommand extends CommandMessage {
       '• `!admin balance` - View pool health (admin only)',
       '',
       '**🏗️ Built by:** SGI Team',
-      '**Repository:** https://github.com/junkyedh/Mezon-Eatery-Bot',
+      '**Repository:** https://github.com/junkyedh/NCC-Credit-System-MezonBot',
       '**Architecture:** Event-driven, microservice-ready design',
     ].join('\n');
 
