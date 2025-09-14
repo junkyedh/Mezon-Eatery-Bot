@@ -1,4 +1,3 @@
-// src/services/mezon-wallet.service.ts
 import { Injectable } from '@nestjs/common';
 import { MezonClientService } from '@app/services/mezon-client.service';
 
@@ -20,7 +19,7 @@ export class MezonWalletService {
   async getBotBalance(): Promise<number> {
     try {
       const botId = this.getBotUserId();
-      if (!botId) return -1; // chưa lấy được botId
+      if (!botId) return -1;
 
       return await this.getUserBalance(botId);
     } catch (error) {

@@ -22,7 +22,6 @@ export class ChannelMessageListener {
     private readonly wallet: MezonWalletService,
   ) {}
 
-  // Handle incoming channel messages (commands)
   @OnEvent(Events.ChannelMessage)
   async handleChannelMessage(message: any) {
     try {
@@ -31,7 +30,6 @@ export class ChannelMessageListener {
       const text: string | undefined = message?.content?.t;
       if (!text || !text.startsWith('!')) return;
 
-      // Track user's last channel for future replies (e.g., deposit confirmations)
       if (message?.channel_id) {
         this.userContext.setLastChannel(message.sender_id, message.channel_id);
       }
@@ -80,7 +78,6 @@ export class ChannelMessageListener {
         'Unknown User',
       );
 
-      // Enforce minimum deposit amount with friendly warning (no auto-refund)
       if (Number(amount) < 1000) {
         const amountFormatted = Number(amount).toLocaleString();
         const content =

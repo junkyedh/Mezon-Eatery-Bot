@@ -25,7 +25,7 @@ export class LoanRequestCommand extends CommandMessage {
         'ℹ️ Cú pháp: `!loan <sotien> <songay>`',
         'Ví dụ: `!loan 15000 30`',
         '—',
-        '💸 Phí giao dịch cố định (trừ khi giải ngân): 5,000',
+        '💸 Phí giao dịch cố định (trừ khi giải ngân): 5.000đ',
         '💡 Lãi suất tham chiếu theo năm:',
         '• Tuần: 0.5%',
         '• Tháng: 3.5%',
@@ -49,7 +49,7 @@ export class LoanRequestCommand extends CommandMessage {
 
     if (isNaN(amount) || amount < 1000) {
       return this.replyMessageGenerate(
-        { messageContent: '❌ Số tiền vay tối thiểu 1,000.' },
+        { messageContent: '❌ Số tiền vay tối thiểu 1.000đ.' },
         message,
       );
     }

@@ -66,7 +66,6 @@ export class PoolService {
   async addToPool(amount: number): Promise<void> {
     const pool = await this.getPool();
 
-    // Only update availableBalance, totalBalance will be recalculated
     await this.poolRepository.update(pool.id, {
       availableBalance: pool.availableBalance + amount,
     });
@@ -81,7 +80,6 @@ export class PoolService {
       throw new Error('Insufficient pool balance');
     }
 
-    // Only update availableBalance, totalBalance will be recalculated
     await this.poolRepository.update(pool.id, {
       availableBalance: pool.availableBalance - amount,
     });

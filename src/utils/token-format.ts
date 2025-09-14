@@ -3,7 +3,6 @@ export function formatToken(value: number | string): string {
   const num = typeof value === 'string' ? Number(value) : value;
   if (isNaN(num)) return '0đ';
 
-  // Format with dots as thousands separator like Mezon SDK
   const formatted = Math.floor(num)
     .toString()
     .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
