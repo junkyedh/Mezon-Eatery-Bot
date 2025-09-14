@@ -13,7 +13,6 @@ export type WalletTransferResult = {
 export class MezonWalletService {
   constructor(private readonly mezon: MezonClientService) {}
 
-  // Get Mezon bot user ID from config/SDK
   getBotUserId(): string | undefined {
     return this.mezon.getBotUserId();
   }
@@ -27,7 +26,6 @@ export class MezonWalletService {
         Object.keys(user),
       );
 
-      // Inspect prototype for potential balance-related methods
       const proto = Object.getPrototypeOf(user) || {};
       const protoProps = Object.getOwnPropertyNames(proto);
       console.log('[MezonWalletService] User prototype props:', protoProps);
@@ -95,7 +93,6 @@ export class MezonWalletService {
       return { success: false, error: 'Minimum amount is 1,000 tokens' };
     }
 
-    // Check user balance first to avoid unnecessary transfer attempt
     try {
       const userBalance = await this.getUserBalance(args.fromUserId);
       if (userBalance !== -1 && userBalance < args.amount) {
@@ -142,7 +139,6 @@ export class MezonWalletService {
     }
     try {
       const clan = await this.mezon.getClient().clans.fetch('0');
-      // Instead of botUser.sendToken, fetch target user and call sendToken (SDK pattern)
       const targetUser = await clan.users.fetch(args.toUserId);
       const res = await targetUser.sendToken({
         amount: args.amount,
@@ -166,15 +162,14 @@ export class MezonWalletService {
   }
 
   /**
-   * Kiểm tra trạng thái giao dịch từ Mezon dựa trên externalTxId
-   * @param externalTxId ID giao dịch trên Mezon
-   * @returns true nếu giao dịch thành công, false nếu thất bại, undefined nếu không xác định được
+   * Check the status of a transaction on Mezon by its external ID.
+   * @param externalTxId ID transaction Mezon
+   * @returns True if successful, false if failed, undefined if unknown/error
    */
   async getTransactionStatus(
     externalTxId: string,
   ): Promise<boolean | undefined> {
     try {
-      // Giả định giao dịch thành công (80% xác suất) để mô phỏng hành vi thực tế
       const simulatedSuccess = Math.random() < 0.8;
 
       this.logTransactionCheck(externalTxId, simulatedSuccess);
@@ -207,7 +202,6 @@ export class MezonWalletService {
     success: boolean;
     error?: string;
   }> {
-    // 1) from -> bot
     const s1 = await this.transferUserToBot({
       fromUserId: args.fromUserId,
       amount: args.amount,
@@ -215,7 +209,6 @@ export class MezonWalletService {
     });
     if (!s1.success) return { success: false, error: s1.error };
 
-    // 2) bot -> to
     const s2 = await this.transferBotToUser({
       toUserId: args.toUserId,
       amount: args.amount,

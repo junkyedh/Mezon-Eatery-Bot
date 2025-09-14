@@ -3,8 +3,8 @@ import { MezonWalletService } from './mezon-wallet.service';
 import { TransactionService } from './transaction.service';
 
 /**
- * Service chịu trách nhiệm kiểm tra và xác nhận các giao dịch nhận token qua webhook
- * Một cách để đồng bộ giao dịch từ webhook API của Mezon
+ * Service responsible for processing webhooks from Mezon
+ * A way to synchronize transactions from Mezon's webhook API
  */
 @Injectable()
 export class WebhookProcessorService {
@@ -15,23 +15,17 @@ export class WebhookProcessorService {
     private transactionService: TransactionService,
   ) {}
 
-  /**
-   * Xử lý webhook từ Mezon để cập nhật giao dịch nạp tiền
-   * @param webhookData dữ liệu từ webhook của Mezon
-   */
   async processDepositWebhook(webhookData: any): Promise<void> {
     this.logger.log(
       `Processing deposit webhook: ${JSON.stringify(webhookData)}`,
     );
 
     try {
-      // Kiểm tra dữ liệu webhook hợp lệ
       if (!this.isValidWebhookData(webhookData)) {
         this.logger.warn('Invalid webhook data');
         return;
       }
 
-      // Trích xuất thông tin giao dịch
       const {
         transaction_id: externalTxId,
         user_id: mezonUserId,
@@ -39,7 +33,6 @@ export class WebhookProcessorService {
         status,
       } = webhookData;
 
-      // Kiểm tra trạng thái giao dịch
       if (status !== 'completed') {
         this.logger.log(
           `Transaction ${externalTxId} is not completed, status: ${status}`,
@@ -47,7 +40,6 @@ export class WebhookProcessorService {
         return;
       }
 
-      // Kiểm tra xem giao dịch đã được xử lý chưa
       const existingTx =
         await this.transactionService.findByExternalTxId(externalTxId);
       if (existingTx) {
@@ -55,10 +47,9 @@ export class WebhookProcessorService {
         return;
       }
 
-      // Xử lý giao dịch nạp tiền
       const idempotencyKey = `webhook:${externalTxId}`;
       await this.transactionService.recordDeposit({
-        userId: mezonUserId, // Chú ý: Cần chuyển đổi từ mezonUserId sang userId trong thực tế
+        userId: mezonUserId,
         amount,
         externalTxId,
         idempotencyKey,
@@ -74,7 +65,6 @@ export class WebhookProcessorService {
   }
 
   private isValidWebhookData(data: any): boolean {
-    // Kiểm tra dữ liệu webhook hợp lệ
     return !!(
       data &&
       data.transaction_id &&
@@ -85,7 +75,7 @@ export class WebhookProcessorService {
   }
 
   /**
-   * Endpoint API để nhận webhook từ Mezon
+   * Endpoint API to receive webhooks from Mezon
    */
   handleWebhook(req: any): Promise<void> {
     return this.processDepositWebhook(req.body);

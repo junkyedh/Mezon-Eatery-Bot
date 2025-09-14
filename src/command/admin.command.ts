@@ -98,6 +98,7 @@ export class AdminCommand extends CommandMessage {
           '• `!admin withdraw <amount>` - Rút phí từ pool',
         ];
         if (isOwner(message.sender_id)) {
+          base.push('• `!admin debug-fees` - Debug fee calculation');
           base.push('• `!admin reset-pool` - Tính lại pool (debug)');
           base.push(
             '• `!admin reset-loan <loanId>` - Reset trạng thái loan (debug)',
@@ -115,9 +116,8 @@ export class AdminCommand extends CommandMessage {
   async showPoolBalance(message: ChannelMessage) {
     try {
       const poolBalance = await this.poolService.getPoolBalance();
-      const rawFees =
-        poolBalance.total - (poolBalance.available + poolBalance.loaned);
-      const feesCollected = Math.max(0, Math.round(Number(rawFees)));
+      const feesCollected =
+        await this.loanService.getTotalFeesFromActiveAndCompletedLoans();
 
       const users = await this.userService.getUsersWithPositiveBalance();
 
@@ -151,6 +151,40 @@ export class AdminCommand extends CommandMessage {
       return this.replyMessageGenerate({ messageContent }, message);
     } catch (error) {
       const messageContent = `❌ Lỗi: ${error.message}`;
+      return this.replyMessageGenerate({ messageContent }, message);
+    }
+  }
+
+  async debugFees(message: ChannelMessage) {
+    try {
+      const poolBalance = await this.poolService.getPoolBalance();
+      const totalFeesFromLoans =
+        await this.loanService.getTotalFeesFromActiveAndCompletedLoans();
+      const activeLoans = await this.loanService.getActiveLoansAmount();
+
+      const feeFromPool =
+        poolBalance.total - (poolBalance.available + poolBalance.loaned);
+      const feeFromLoanService = totalFeesFromLoans;
+
+      const messageContent = [
+        '🔍 **Phân tích phí (Debug)**',
+        `• Tổng pool: ${formatToken(poolBalance.total)}`,
+        `• Khả dụng: ${formatToken(poolBalance.available)}`,
+        `• Đang cho vay: ${formatToken(poolBalance.loaned)}`,
+        `• Tổng khoản vay đang hoạt động: ${formatToken(activeLoans)}`,
+        '',
+        '📊 **Tính phí:**',
+        `• Phí (theo pool): ${formatToken(Math.max(0, feeFromPool))}`,
+        `• Phí (theo loan): ${formatToken(feeFromLoanService)}`,
+        '',
+        '🎯 **Công thức:**',
+        '• Phí pool = tổng - (khả dụng + cho vay)',
+        '• Phí loan = tổng phí từ các khoản vay',
+      ].join('\n');
+
+      return this.replyMessageGenerate({ messageContent }, message);
+    } catch (error) {
+      const messageContent = `❌ Debug fees error: ${error.message}`;
       return this.replyMessageGenerate({ messageContent }, message);
     }
   }
@@ -198,7 +232,6 @@ export class AdminCommand extends CommandMessage {
       const messageContent = [
         '✅ **Rút phí thành công**',
         `• Số lượng: ${formatToken(amount)}`,
-        `• ID: ${walletResult.externalTxId || 'N/A'}`,
         `• Phí còn lại: ${formatToken(feesCollected - amount)}`,
       ].join('\n');
 

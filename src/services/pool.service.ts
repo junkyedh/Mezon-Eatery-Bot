@@ -46,7 +46,6 @@ export class PoolService {
   }
 
   async recalculatePool(): Promise<void> {
-    // Get actual balances
     const users = await this.userService.getUsersWithPositiveBalance();
     const totalUserBalances = users.reduce(
       (sum, user) => sum + user.balance,
@@ -59,10 +58,6 @@ export class PoolService {
 
     const pool = await this.getPool();
 
-    // Update pool with correct values
-    // available = sum of user balances (internal tracking)
-    // loaned = sum of active loans (for tracking only, not in totalBalance)
-    // totalBalance = available + fees (loaned tokens are already with users)
     await this.poolRepository.update(pool.id, {
       availableBalance: totalUserBalances,
       loanedAmount: activeLoansAmount,
@@ -78,7 +73,6 @@ export class PoolService {
       availableBalance: pool.availableBalance + amount,
     });
 
-    // Recalculate totalBalance = available + fees
     await this.recalculatePool();
   }
 
@@ -94,12 +88,10 @@ export class PoolService {
       availableBalance: pool.availableBalance - amount,
     });
 
-    // Recalculate totalBalance = available + fees
     await this.recalculatePool();
   }
 
   async withdrawFee(amount: number): Promise<void> {
-    // Recalculate pool to ensure fees are up to date
     await this.recalculatePool();
 
     const totalFeesFromLoans =
@@ -109,9 +101,6 @@ export class PoolService {
       throw new Error('Insufficient fee balance to withdraw');
     }
 
-    // Note: When admin withdraws fee, the fee amount is reduced from totalBalance
-    // but the actual fee reduction happens when the loan is marked as fee-withdrawn
-    // For now, we just recalculate pool after the withdrawal transaction
     await this.recalculatePool();
   }
 

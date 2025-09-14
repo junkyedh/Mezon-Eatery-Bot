@@ -96,7 +96,7 @@ export class LoanRequestCommand extends CommandMessage {
         fee,
       });
       const borrowerName = message.username || loan.userId.substring(0, 6);
-      const interest = amount * (annualRate / 100) * (days / 365); // keep full precision
+      const interest = amount * (annualRate / 100) * (days / 365);
       const total = amount + interest;
       const disbursed = Math.max(amount - fee, 0);
       const dueDate = new Date(loan.dueDate);

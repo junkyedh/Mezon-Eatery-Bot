@@ -27,12 +27,10 @@ export class TransactionService {
     idempotencyKey?: string,
     source: 'mezon' | 'manual' = 'manual',
   ): Promise<Transaction> {
-    // Validate minimum amount
     if (amount < 1000) {
       throw new Error('Minimum deposit amount is 1,000 tokens');
     }
 
-    // Check for existing transaction with the same idempotency key
     if (idempotencyKey) {
       const existingTx = await this.findByIdempotencyKey(idempotencyKey);
       if (existingTx) {
@@ -56,7 +54,6 @@ export class TransactionService {
         await entityManager.save(transaction);
         await this.userService.updateBalance(userId, amount);
 
-        // Update pool totalBalance to track actual tokens in bot
         await this.poolService.addToPool(amount);
 
         return transaction;
@@ -71,7 +68,6 @@ export class TransactionService {
     idempotencyKey?: string,
     source: 'mezon' | 'manual' = 'manual',
   ): Promise<Transaction> {
-    // Validate minimum amount (mirrors SDK guard)
     if (amount < 1000) {
       throw new Error('Minimum withdrawal amount is 1,000 tokens');
     }
@@ -101,7 +97,6 @@ export class TransactionService {
         await entityManager.save(transaction);
         await this.userService.updateBalance(userId, -amount);
 
-        // Update pool totalBalance to track actual tokens removed from bot
         await this.poolService.removeFromPool(amount);
 
         return transaction;
@@ -159,7 +154,6 @@ export class TransactionService {
           });
           console.log(`Transaction ${transaction.id} marked as COMPLETED`);
 
-          // If it was a deposit, update user balance
           if (
             transaction.type === TransactionType.DEPOSIT &&
             transaction.status !== TransactionStatus.COMPLETED
@@ -173,7 +167,6 @@ export class TransactionService {
             );
           }
         } else {
-          // Update status to failed after several attempts
           await this.transactionRepository.update(transaction.id, {
             status: TransactionStatus.FAILED,
           });

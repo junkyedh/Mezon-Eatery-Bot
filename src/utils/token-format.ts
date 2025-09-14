@@ -1,4 +1,3 @@
-// Central token formatting helper (no rounding, just thousands separator)
 export function formatToken(value: number | string): string {
   if (value === null || value === undefined) return '0';
   const num = typeof value === 'string' ? Number(value) : value;

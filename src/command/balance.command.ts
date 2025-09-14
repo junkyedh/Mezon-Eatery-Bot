@@ -21,12 +21,10 @@ export class BalanceCommand extends CommandMessage {
 
   async execute(args: string[], message: ChannelMessage) {
     try {
-      // Get user info
       const user = await this.userService.findOrCreateUser(
         message.sender_id,
         message.username || 'Unknown User',
       );
-      // Tính thâm niên (năm) dựa trên thời điểm user tham gia (proxy: createdAt trong hệ thống)
       const now = Date.now();
       const createdTime = user.createdAt
         ? new Date(user.createdAt).getTime()
@@ -38,19 +36,16 @@ export class BalanceCommand extends CommandMessage {
       const tenureDisplay =
         tenureYears < 1 ? '< 1 năm' : `${Math.floor(tenureYears)} năm`;
 
-      // Active loan summary (if any)
       const activeLoan = await this.loanService.getActiveLoan(
         message.sender_id,
       );
       let loanLines: string[] = [];
 
       if (activeLoan) {
-        // Use consistent real-time repay calculation
         const { totalDue, interestAccrued } =
           this.loanService.calculateRealTimeRepayAmount(activeLoan);
         const acc = this.loanService.calculateAccruedInterest(activeLoan);
 
-        // Ensure dueDate is properly formatted
         const dueDate =
           activeLoan.dueDate instanceof Date
             ? activeLoan.dueDate

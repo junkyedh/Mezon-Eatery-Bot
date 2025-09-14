@@ -50,7 +50,6 @@ export class Transaction {
   @Column({ nullable: true })
   description: string;
 
-  // NOTE: Database columns were created in snake_case by migrations.
   @Column({
     name: 'external_tx_id',
     type: 'varchar',

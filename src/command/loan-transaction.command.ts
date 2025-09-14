@@ -57,7 +57,6 @@ export class LoanTransactionCommand extends CommandMessage {
       ];
       if (lenderName) lines.push(`💼 Người cho vay: @${lenderName}`);
 
-      // Use consistent real-time repay calculation
       const { totalDue, interestAccrued } =
         this.loanService.calculateRealTimeRepayAmount(loan);
       const timeInfo = this.loanService.calculateAccruedInterest(loan);
