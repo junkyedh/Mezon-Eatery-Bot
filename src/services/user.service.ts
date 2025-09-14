@@ -19,7 +19,6 @@ export class UserService {
       user = this.userRepository.create({
         mezonUserId,
         username,
-        ncScore: 100000, // Default NC Score
         balance: 0,
       });
       await this.userRepository.save(user);
@@ -47,15 +46,6 @@ export class UserService {
     return this.userRepository.find({ where: ids.map((id) => ({ id })) });
   }
 
-  async updateNCScore(userId: string, points: number): Promise<void> {
-    await this.userRepository
-      .createQueryBuilder()
-      .update(User)
-      .set({ ncScore: () => `nc_score + ${points}` })
-      .where('id = :userId', { userId })
-      .execute();
-  }
-
   async updateBalance(userId: string, amount: number): Promise<void> {
     await this.userRepository
       .createQueryBuilder()
@@ -76,42 +66,13 @@ export class UserService {
   async getUsersWithPositiveBalance(): Promise<User[]> {
     return this.userRepository.find({
       where: { balance: MoreThan(0) },
-      order: { balance: 'DESC' }
+      order: { balance: 'DESC' },
     });
   }
 
   async getUserByUsername(username: string): Promise<User | null> {
     return this.userRepository.findOne({
-      where: { username }
+      where: { username },
     });
-  }
-
-  calculateNCScore(
-    jobLevel: string,
-    tenure: number,
-    repaymentHistory: number,
-  ): number {
-    let score = 100000; // Base score
-
-    // Job level bonus
-    switch (jobLevel?.toLowerCase()) {
-      case 'manager':
-        score += 10000;
-        break;
-      case 'senior':
-        score += 5000;
-        break;
-      case 'junior':
-        score += 2000;
-        break;
-    }
-
-    // Tenure bonus (3,000 per year)
-    score += tenure * 3000;
-
-    // Repayment history adjustment
-    score += repaymentHistory;
-
-    return Math.max(score, 100000); // Minimum 100,000
   }
 }

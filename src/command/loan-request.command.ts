@@ -99,13 +99,15 @@ export class LoanRequestCommand extends CommandMessage {
       const interest = amount * (annualRate / 100) * (days / 365); // keep full precision
       const total = amount + interest;
       const disbursed = Math.max(amount - fee, 0);
+      const dueDate = new Date(loan.dueDate);
+
       const messageContent = [
         '✅ Tạo yêu cầu vay thành công',
         `🆔 Mã khoản vay: ${loan.id}`,
         `👥 Người vay: @${borrowerName}`,
         `💰 Số tiền vay: ${formatToken(amount)} tokens`,
         `📅 Kỳ hạn yêu cầu: ${days} ngày (${termQuantity} ${termUnit})`,
-        `📆 Ngày đáo hạn dự kiến: ${loan.dueDate.toLocaleDateString('vi-VN')}`,
+        `📆 Ngày đáo hạn dự kiến: ${dueDate.toLocaleDateString('vi-VN')}`,
         `💸 Phí giao dịch: ${formatToken(fee)} (trừ khi giải ngân)`,
         `📈 Lãi suất tham chiếu: ${annualRate}%/năm (tạm tính lãi: ${formatToken(interest)} tokens)`,
         `📊 Tổng phải trả (ước tính): ${formatToken(total)} tokens`,

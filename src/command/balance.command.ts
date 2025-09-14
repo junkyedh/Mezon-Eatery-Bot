@@ -43,38 +43,40 @@ export class BalanceCommand extends CommandMessage {
         message.sender_id,
       );
       let loanLines: string[] = [];
-      let capacityLines: string[] = [];
-      const baseCapacity = user.ncScore * 0.5;
-      let remainingCapacity = baseCapacity;
+
       if (activeLoan) {
+        // Use consistent real-time repay calculation
+        const { totalDue, interestAccrued } =
+          this.loanService.calculateRealTimeRepayAmount(activeLoan);
         const acc = this.loanService.calculateAccruedInterest(activeLoan);
-        const totalDue = activeLoan.amount + acc.interestAccrued;
-        remainingCapacity = Math.max(baseCapacity - activeLoan.amount, 0);
+
+        // Ensure dueDate is properly formatted
+        const dueDate =
+          activeLoan.dueDate instanceof Date
+            ? activeLoan.dueDate
+            : new Date(activeLoan.dueDate);
+
         loanLines = [
-          '📌 **Khoản vay đang hoạt động**',
-          `🆔 Loan: ${activeLoan.id}`,
+          '',
+          '📋 **Khoản vay đang hoạt động (1)**',
+          '',
+          `♦️ **Khoản vay #1**`,
+          `🆔 Mã giao dịch: ${activeLoan.id}`,
           `💰 Gốc: ${formatToken(activeLoan.amount)}`,
           `📈 Lãi suất năm: ${activeLoan.interestRate}%`,
-          `💸 Lãi tạm tính: ${formatToken(acc.interestAccrued)} tokens`,
-          `💼 Tổng tạm phải trả: ${formatToken(totalDue)} tokens`,
-          `📆 Đáo hạn: ${activeLoan.dueDate.toLocaleDateString('vi-VN')} (còn ${Math.max(acc.totalTermDays - acc.elapsedDays, 0)} ngày)`,
+          `💸 Lãi tạm tính: ${formatToken(interestAccrued)}`,
+          `💼 Tổng tạm phải trả: ${formatToken(totalDue)}`,
+          `📅 Đáo hạn: ${dueDate.toLocaleDateString('vi-VN')} (còn ${Math.max(acc.totalTermDays - acc.elapsedDays, 0)} ngày)`,
         ];
       }
-      capacityLines = [
-        '📊 **Hạn mức vay**',
-        `• Hạn mức cơ sở: ${formatToken(baseCapacity)} tokens`,
-        `• Hạn mức còn lại: ${formatToken(remainingCapacity)} tokens`,
-      ];
 
       const messageContent = [
         '💰 **NCC Credit Balance**',
-        `👤 **Người dùng:** ${user.username}`,
-        `💳 **Số dư NCC Credit:** ${formatToken(user.balance)} tokens`,
-        `🎯 **NC Score:** ${formatToken(user.ncScore)} điểm`,
-        `🏢 **Vai trò (Role):** ${user.jobLevel || 'Chưa cập nhật'}`,
-        `⏰ **Thâm niên Mezon:** ${tenureDisplay}`,
+        `👤 Người dùng: ${user.username}`,
+        `💳 Số dư NCC Credit: ${formatToken(user.balance)}`,
+        `🏢 Vai trò (Role): ${user.jobLevel || 'Chưa cập nhật'}`,
+        `⏰ Thâm niên Mezon: ${tenureDisplay}`,
         ...loanLines,
-        ...capacityLines,
       ].join('\n');
 
       return this.replyMessageGenerate({ messageContent }, message);
