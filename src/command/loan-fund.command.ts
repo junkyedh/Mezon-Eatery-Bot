@@ -39,6 +39,8 @@ export class LoanFundCommand extends CommandMessage {
       const borrowerName =
         borrowerUser?.username || loan.userId.substring(0, 6);
       const lenderName = message.username || 'Ban';
+      const dueDate = new Date(loan.dueDate);
+
       const lines: string[] = [
         '✅ **Đã Giải Ngân Khoản Vay**\n',
         `🆔 Mã giao dịch: ${loan.id}`,
@@ -48,7 +50,7 @@ export class LoanFundCommand extends CommandMessage {
         `🧾 Phí bot: ${formatToken(loan.fee)}`,
         `💸 Nhận thực: ${formatToken(loan.amount - loan.fee)}`,
         `📈 Lãi suất năm: ${loan.interestRate}%`,
-        `📆 Đáo hạn: ${loan.dueDate.toLocaleDateString('vi-VN')}`,
+        `📆 Đáo hạn: ${dueDate.toLocaleDateString('vi-VN')}`,
         '⚠️ Người vay sẽ phải trả cả gốc + lãi khi tất toán. Phí đã bị trừ ngay khi nhận.',
       ];
       const messageContent = lines.join('\n');

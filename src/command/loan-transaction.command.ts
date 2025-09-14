@@ -41,7 +41,6 @@ export class LoanTransactionCommand extends CommandMessage {
         approved: 'Đã duyệt',
         defaulted: 'Quá hạn',
       };
-      const info = this.loanService.calculateAccruedInterest(loan);
       const borrowerUser = await this.userService.getUserById(loan.userId);
       const borrowerName =
         borrowerUser?.username || loan.userId.substring(0, 6);
@@ -57,12 +56,30 @@ export class LoanTransactionCommand extends CommandMessage {
         `👥 Người vay: @${borrowerName}`,
       ];
       if (lenderName) lines.push(`💼 Người cho vay: @${lenderName}`);
+
+      const { totalDue, interestAccrued } =
+        this.loanService.calculateRealTimeRepayAmount(loan);
+      const timeInfo = this.loanService.calculateAccruedInterest(loan);
+
+      let interestDisplay: string;
+      if (loan.status === 'active') {
+        interestDisplay = `💸 Lãi tạm tính: ${formatToken(interestAccrued)} (${timeInfo.elapsedDays}/${timeInfo.totalTermDays} ngày)`;
+      } else if (loan.status === 'pending') {
+        interestDisplay = `💸 Lãi dự kiến: ${formatToken(loan.interestAmount)}`;
+      } else if (loan.status === 'completed') {
+        interestDisplay = `💸 Lãi đã trả: ${formatToken(interestAccrued)}`;
+      } else {
+        interestDisplay = `💸 Lãi: ${formatToken(interestAccrued)}`;
+      }
+      const dueDate = new Date(loan.dueDate);
+
       lines.push(
         `💰 Số tiền gốc: ${formatToken(loan.amount)}`,
         `📈 Lãi suất năm: ${loan.interestRate}%`,
         `⏱ Kỳ hạn: ${loan.termQuantity} ${loan.termUnit}`,
-        `📆 Đáo hạn: ${loan.dueDate.toLocaleDateString('vi-VN')}`,
-        `💸 Lãi tạm tính: ${formatToken(info.interestAccrued)}`,
+        `📆 Đáo hạn: ${dueDate.toLocaleDateString('vi-VN')}`,
+        interestDisplay,
+        `💼 Tổng cần trả: ${formatToken(totalDue)}`,
         `📊 Trạng thái: ${statusMap[loan.status] || loan.status}`,
       );
       const messageContent = lines.join('\n');

@@ -36,7 +36,7 @@ export class Loan {
   fee: number;
 
   @Column('decimal', { precision: 5, scale: 2, default: 16.3 })
-  interestRate: number; // 16.3% per year
+  interestRate: number;
 
   @Column({ type: 'enum', enum: ['week', 'month'], default: 'month' })
   termUnit: LoanTermUnit;

@@ -122,7 +122,6 @@ export class ChannelMessageListener {
         return;
       }
 
-      // recordDeposit already updates pool via transaction service
       await this.transactionService.recordDeposit({
         userId: user.id,
         amount: Number(amount),
@@ -136,7 +135,6 @@ export class ChannelMessageListener {
         `✅ Số lượng: ${amountFormatted} tokens\n` +
         `🆔 Tx: ${tx_id}`;
 
-      // Prefer last known channel for the sender; fallback to DM if unknown.
       const lastChannel = this.userContext.getLastChannel(user.mezonUserId);
       const defaultChannel = process.env.MEZON_DEFAULT_CHANNEL_ID;
       if (lastChannel) {

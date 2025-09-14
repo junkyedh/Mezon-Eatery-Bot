@@ -1,13 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Pool } from '@app/entities/pool.entity';
+import { UserService } from './user.service';
+import { LoanService } from './loan.service';
 
 @Injectable()
 export class PoolService {
   constructor(
     @InjectRepository(Pool)
     private poolRepository: Repository<Pool>,
+    private userService: UserService,
+    @Inject(forwardRef(() => LoanService))
+    private loanService: LoanService,
   ) {}
 
   async getPool(): Promise<Pool> {
@@ -27,13 +32,47 @@ export class PoolService {
     return pool;
   }
 
+  async getPoolBalance(): Promise<{
+    total: number;
+    available: number;
+    loaned: number;
+  }> {
+    const pool = await this.getPool();
+    return {
+      total: pool.totalBalance,
+      available: pool.availableBalance,
+      loaned: pool.loanedAmount,
+    };
+  }
+
+  async recalculatePool(): Promise<void> {
+    const users = await this.userService.getUsersWithPositiveBalance();
+    const totalUserBalances = users.reduce(
+      (sum, user) => sum + user.balance,
+      0,
+    );
+
+    const activeLoansAmount = await this.loanService.getActiveLoansAmount();
+    const totalFeesFromLoans =
+      await this.loanService.getTotalFeesFromActiveAndCompletedLoans();
+
+    const pool = await this.getPool();
+
+    await this.poolRepository.update(pool.id, {
+      availableBalance: totalUserBalances,
+      loanedAmount: activeLoansAmount,
+      totalBalance: totalUserBalances + totalFeesFromLoans,
+    });
+  }
+
   async addToPool(amount: number): Promise<void> {
     const pool = await this.getPool();
 
     await this.poolRepository.update(pool.id, {
-      totalBalance: pool.totalBalance + amount,
       availableBalance: pool.availableBalance + amount,
     });
+
+    await this.recalculatePool();
   }
 
   async removeFromPool(amount: number): Promise<void> {
@@ -44,9 +83,23 @@ export class PoolService {
     }
 
     await this.poolRepository.update(pool.id, {
-      totalBalance: pool.totalBalance - amount,
       availableBalance: pool.availableBalance - amount,
     });
+
+    await this.recalculatePool();
+  }
+
+  async withdrawFee(amount: number): Promise<void> {
+    await this.recalculatePool();
+
+    const totalFeesFromLoans =
+      await this.loanService.getTotalFeesFromActiveAndCompletedLoans();
+
+    if (totalFeesFromLoans < amount) {
+      throw new Error('Insufficient fee balance to withdraw');
+    }
+
+    await this.recalculatePool();
   }
 
   async addLoanToPool(amount: number): Promise<void> {
@@ -65,19 +118,5 @@ export class PoolService {
       loanedAmount: pool.loanedAmount - amount,
       availableBalance: pool.availableBalance + amount,
     });
-  }
-
-  async getPoolBalance(): Promise<{
-    total: number;
-    available: number;
-    loaned: number;
-  }> {
-    const pool = await this.getPool();
-
-    return {
-      total: pool.totalBalance,
-      available: pool.availableBalance,
-      loaned: pool.loanedAmount,
-    };
   }
 }

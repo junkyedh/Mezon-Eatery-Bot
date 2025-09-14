@@ -21,16 +21,16 @@ export class Pool {
   loanedAmount: number;
 
   @Column('decimal', { precision: 5, scale: 2, default: 0.5 })
-  weeklyInterestRate: number; // 0.5% per year
+  weeklyInterestRate: number;
 
   @Column('decimal', { precision: 5, scale: 2, default: 3.5 })
-  monthlyInterestRate: number; // 3.5% per year
+  monthlyInterestRate: number;
 
   @Column('decimal', { precision: 5, scale: 2, default: 3.8 })
-  quarterlyInterestRate: number; // 3.8% per year
+  quarterlyInterestRate: number;
 
   @Column('decimal', { precision: 5, scale: 2, default: 4.85 })
-  yearlyInterestRate: number; // 4.85% per year
+  yearlyInterestRate: number;
 
   @CreateDateColumn()
   createdAt: Date;

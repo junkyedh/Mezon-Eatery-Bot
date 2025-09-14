@@ -1,13 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Loan, LoanStatus, LoanTermUnit } from '@app/entities/loan.entity';
 import { UserService } from './user.service';
 import { PoolService } from './pool.service';
-import { TransactionService } from './transaction.service';
 import { MezonWalletService } from './mezon-wallet.service';
-import { plainToInstance } from 'class-transformer';
-import { LoanDto } from '@app/dtos/loan.dto';
 
 @Injectable()
 export class LoanService {
@@ -15,21 +12,18 @@ export class LoanService {
     @InjectRepository(Loan)
     private loanRepository: Repository<Loan>,
     private userService: UserService,
+    @Inject(forwardRef(() => PoolService))
     private poolService: PoolService,
-    private transactionService: TransactionService,
     private wallet: MezonWalletService,
   ) {}
 
-  /**
-   * New P2P: Borrower creates a loan request (pending)
-   */
   async createLoanRequest(params: {
     mezonUserId: string;
     amount: number;
-    interestRate: number; // annual %
+    interestRate: number;
     termUnit: LoanTermUnit;
-    termQuantity: number; // number of units
-    fee?: number; // flat fee deducted from disbursement
+    termQuantity: number;
+    fee?: number;
   }): Promise<Loan> {
     const { mezonUserId, amount, interestRate, termUnit, termQuantity, fee } =
       params;
@@ -95,31 +89,16 @@ export class LoanService {
 
     if (lender.id === loan.userId)
       throw new Error('Không thể tự cho chính mình vay');
-    // Check internal balance
     if (lender.balance < loan.amount)
       throw new Error('Số dư nội bộ không đủ để cho vay');
 
-    // Check actual balance on Mezon wallet (if SDK returns -1 then ignore)
     const chainBalance = await this.wallet.getUserBalance(lender.mezonUserId);
     if (chainBalance !== -1 && chainBalance < loan.amount) {
       throw new Error('Số dư ví Mezon không đủ để cho vay');
     }
 
     loan.lenderUserId = lender.id;
-    loan.status = LoanStatus.ACTIVE;
-    loan.startDate = new Date();
-    loan.approvedAt = new Date();
-    // Perform token transfers: lender -> bot, then bot -> borrower (minus fee)
-    // Idempotency key simple: loanId + timestamp phases
-    const idemBase = `fund:${loan.id}`;
-    const toBot = await this.wallet.transferUserToBot({
-      fromUserId: lender.mezonUserId,
-      amount: loan.amount,
-      idemKey: idemBase + ':lend',
-    });
-    if (!toBot.success) {
-      throw new Error('Chuyển token từ lender vào bot thất bại');
-    }
+    await this.loanRepository.save(loan);
 
     const disburseAmount = loan.amount - loan.fee;
     if (disburseAmount < 0) throw new Error('Phí lớn hơn số tiền');
@@ -127,6 +106,8 @@ export class LoanService {
       const borrowerEntity = await this.userService.getUserById(loan.userId);
       if (!borrowerEntity?.mezonUserId)
         throw new Error('Không lấy được mezonUserId borrower');
+
+      const idemBase = `fund:${loan.id}`;
       const toBorrower = await this.wallet.transferBotToUser({
         toUserId: borrowerEntity.mezonUserId,
         amount: disburseAmount,
@@ -137,10 +118,17 @@ export class LoanService {
       }
     }
 
-    // Update internal balances to reflect changes (keep fee in bot)
     await this.userService.updateBalance(lender.id, -loan.amount);
-    await this.userService.updateBalance(loan.userId, disburseAmount);
-    return this.loanRepository.save(loan);
+
+    loan.status = LoanStatus.ACTIVE;
+    loan.startDate = new Date();
+    loan.approvedAt = new Date();
+
+    const savedLoan = await this.loanRepository.save(loan);
+
+    await this.poolService.recalculatePool();
+
+    return savedLoan;
   }
 
   async repayLoan(params: { loanId: string; mezonUserId: string }): Promise<{
@@ -163,40 +151,36 @@ export class LoanService {
     const lender = await this.userService.getUserById(loan.lenderUserId);
     if (!lender) throw new Error('Lender không tồn tại');
 
-    const { interestAccrued, early } = this.calculateAccruedInterest(loan);
-    const totalDue = +(loan.amount + interestAccrued).toFixed(2);
-    if (borrower.balance < totalDue)
-      throw new Error('Số dư nội bộ không đủ để trả nợ');
+    const { totalDue, interestAccrued, early } =
+      this.calculateRealTimeRepayAmount(loan);
 
-    // Check actual balance on Mezon wallet (if SDK returns -1 then ignore)
-    const chainBalance = await this.wallet.getUserBalance(borrower.mezonUserId);
-    if (chainBalance !== -1 && chainBalance < totalDue) {
-      throw new Error('Số dư ví Mezon không đủ để trả nợ');
+    if (borrower.balance < totalDue) {
+      throw new Error(
+        `Số dư nội bộ không đủ để trả nợ. Cần: ${totalDue}, Có: ${borrower.balance}. Vui lòng nạp thêm token vào bot trước.`,
+      );
     }
 
-    // Borrower -> bot -> lender settlement
     const idemBase = `repay:${loan.id}`;
-    const toBot = await this.wallet.transferUserToBot({
-      fromUserId: borrower.mezonUserId,
-      amount: totalDue,
-      idemKey: idemBase + ':borrower',
-    });
-    if (!toBot.success) throw new Error('Chuyển token trả nợ vào bot thất bại');
     const toLender = await this.wallet.transferBotToUser({
       toUserId: lender.mezonUserId,
       amount: totalDue,
       idemKey: idemBase + ':lender',
     });
-    if (!toLender.success)
-      throw new Error('Chuyển token trả nợ cho lender thất bại');
+
+    if (!toLender.success) {
+      throw new Error(
+        'Chuyển token trả nợ cho lender thất bại. Token vẫn trong bot, bạn có thể thử lại sau.',
+      );
+    }
 
     await this.userService.updateBalance(borrower.id, -totalDue);
-    await this.userService.updateBalance(lender.id, totalDue);
 
     loan.paidAmount = totalDue;
     loan.status = LoanStatus.COMPLETED;
     loan.repaidAt = new Date();
     await this.loanRepository.save(loan);
+
+    await this.poolService.recalculatePool();
 
     return {
       totalDue,
@@ -223,16 +207,22 @@ export class LoanService {
   } {
     const start = loan.startDate || loan.createdAt;
     const now = new Date();
-    const elapsedMs = now.getTime() - start.getTime();
+
+    const dueDate =
+      loan.dueDate instanceof Date ? loan.dueDate : new Date(loan.dueDate);
+    const startDate = start instanceof Date ? start : new Date(start);
+
+    const elapsedMs = now.getTime() - startDate.getTime();
     const elapsedDays = Math.max(Math.floor(elapsedMs / 86400000), 0);
     const totalTermDays = Math.max(
-      Math.floor((loan.dueDate.getTime() - start.getTime()) / 86400000),
+      Math.floor((dueDate.getTime() - startDate.getTime()) / 86400000),
       1,
     );
-    const annualRate = loan.interestRate / 100;
-    const interestFull = loan.amount * annualRate * (totalTermDays / 365);
+    const annualRate = Number(loan.interestRate) / 100;
+    const loanAmount = Number(loan.amount);
+    const interestFull = loanAmount * annualRate * (totalTermDays / 365);
     const proportion = Math.min(elapsedDays / totalTermDays, 1);
-    const interestAccrued = +(interestFull * proportion).toFixed(2);
+    const interestAccrued = Number((interestFull * proportion).toFixed(2));
     return {
       interestAccrued,
       early: proportion < 1,
@@ -241,9 +231,42 @@ export class LoanService {
     };
   }
 
+  calculateRealTimeRepayAmount(loan: Loan): {
+    totalDue: number;
+    interestAccrued: number;
+    early: boolean;
+  } {
+    if (loan.status === 'completed') {
+      const loanAmount = Number(loan.amount);
+      const paidAmount = Number(loan.paidAmount || 0);
+      const totalRepayAmount = Number(loan.totalRepayAmount);
+      const actualInterestPaid = paidAmount - loanAmount;
+      return {
+        totalDue: paidAmount || totalRepayAmount,
+        interestAccrued: Math.max(0, actualInterestPaid),
+        early: false,
+      };
+    }
+
+    if (loan.status === 'active') {
+      const { interestAccrued, early } = this.calculateAccruedInterest(loan);
+      const loanAmount = Number(loan.amount);
+      const totalRepayAmount = Number(loan.totalRepayAmount);
+      const totalDue = early
+        ? Number((loanAmount + interestAccrued).toFixed(2))
+        : Number(totalRepayAmount.toFixed(2));
+      return { totalDue, interestAccrued, early };
+    }
+
+    return {
+      totalDue: Number(loan.totalRepayAmount),
+      interestAccrued: Number(loan.interestAmount || 0),
+      early: false,
+    };
+  }
+
   async getLoanById(id: string): Promise<Loan | null> {
-    const loan = this.loanRepository.findOne({ where: { id } });
-    return plainToInstance(LoanDto, loan);
+    return this.loanRepository.findOne({ where: { id } });
   }
 
   async payLoan(mezonUserId: string, amount: number): Promise<void> {
@@ -267,18 +290,14 @@ export class LoanService {
       throw new Error('Insufficient balance for payment');
     }
 
-    // Update loan paid amount
     await this.loanRepository.update(activeLoan.id, {
       paidAmount: activeLoan.paidAmount + amount,
     });
 
-    // Update user balance
     await this.userService.updateBalance(user.id, -amount);
 
-    // Update pool
     await this.poolService.removeLoanFromPool(amount);
 
-    // Check if loan is fully paid
     const updatedLoan = await this.loanRepository.findOne({
       where: { id: activeLoan.id },
     });
@@ -317,13 +336,50 @@ export class LoanService {
         missedPayments: loan.missedPayments + 1,
       });
 
-      // Block user after 2 missed payments
       if (loan.missedPayments >= 2) {
         await this.userService.blockUser(loan.userId);
         await this.loanRepository.update(loan.id, {
           status: LoanStatus.DEFAULTED,
         });
+      } else {
+        await this.loanRepository.update(loan.id, {
+          status: LoanStatus.DEFAULTED,
+        });
       }
     }
+  }
+
+  async getActiveLoansAmount(): Promise<number> {
+    const result = await this.loanRepository
+      .createQueryBuilder('loan')
+      .select('SUM(loan.amount)', 'total')
+      .where('loan.status = :status', { status: 'active' })
+      .getRawOne();
+
+    return Math.max(0, Number(result?.total || 0));
+  }
+
+  async getTotalFeesFromActiveAndCompletedLoans(): Promise<number> {
+    const result = await this.loanRepository
+      .createQueryBuilder('loan')
+      .select('SUM(loan.fee)', 'total')
+      .where('loan.status IN (:...statuses)', {
+        statuses: ['active', 'completed'],
+      })
+      .getRawOne();
+
+    return Math.max(0, Number(result?.total || 0));
+  }
+
+  async getAllLoans(): Promise<Loan[]> {
+    return this.loanRepository.find({
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async resetLoanToActive(loanId: string): Promise<void> {
+    await this.loanRepository.update(loanId, {
+      status: LoanStatus.ACTIVE,
+    });
   }
 }
