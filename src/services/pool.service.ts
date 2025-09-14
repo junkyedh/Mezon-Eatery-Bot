@@ -47,21 +47,19 @@ export class PoolService {
 
   async recalculatePool(): Promise<void> {
     const users = await this.userService.getUsersWithPositiveBalance();
-    const totalUserBalances = users.reduce(
-      (sum, user) => sum + user.balance,
-      0,
-    );
+    const totalUserBalances = users.reduce((s, u) => s + u.balance, 0);
 
     const activeLoansAmount = await this.loanService.getActiveLoansAmount();
     const totalFeesFromLoans =
       await this.loanService.getTotalFeesFromActiveAndCompletedLoans();
 
     const pool = await this.getPool();
+    const withdrawn = Number(pool.withdrawnFees || 0);
 
     await this.poolRepository.update(pool.id, {
       availableBalance: totalUserBalances,
       loanedAmount: activeLoansAmount,
-      totalBalance: totalUserBalances + totalFeesFromLoans,
+      totalBalance: totalUserBalances + totalFeesFromLoans - withdrawn,
     });
   }
 
@@ -92,14 +90,20 @@ export class PoolService {
   }
 
   async withdrawFee(amount: number): Promise<void> {
-    await this.recalculatePool();
+    const pool = await this.getPool();
 
     const totalFeesFromLoans =
       await this.loanService.getTotalFeesFromActiveAndCompletedLoans();
 
-    if (totalFeesFromLoans < amount) {
+    const withdrawn = Number(pool.withdrawnFees || 0);
+    const withdrawable = totalFeesFromLoans - withdrawn;
+    if (amount > withdrawable) {
       throw new Error('Insufficient fee balance to withdraw');
     }
+
+    await this.poolRepository.update(pool.id, {
+      withdrawnFees: withdrawn + amount,
+    });
 
     await this.recalculatePool();
   }

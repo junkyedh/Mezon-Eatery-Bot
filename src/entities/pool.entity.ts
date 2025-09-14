@@ -32,6 +32,9 @@ export class Pool {
   @Column('decimal', { precision: 5, scale: 2, default: 4.85 })
   yearlyInterestRate: number;
 
+  @Column('decimal', { precision: 15, scale: 2, default: 0 })
+  withdrawnFees: number;
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -55,6 +55,15 @@ export class WithdrawCommand extends CommandMessage {
 
       const idemKey = `${message.message_id || Date.now()}::withdraw::${message.sender_id}`;
 
+      const botBal = await this.mezonWalletService.getBotBalance();
+      if (botBal !== -1 && botBal < amount) {
+        const messageContent =
+          `⚠️ Pool đang thiếu thanh khoản on-chain.\n` +
+          `• Ví bot hiện có: ${formatToken(botBal)}\n` +
+          `• Bạn yêu cầu rút: ${formatToken(amount)}\n` +
+          `👉 Vui lòng rút ≤ ${formatToken(botBal)} hoặc đợi admin nạp thêm token.`;
+        return this.replyMessageGenerate({ messageContent }, message);
+      }
       const walletResult = await this.mezonWalletService.transferBotToUser({
         toUserId: message.sender_id,
         amount,

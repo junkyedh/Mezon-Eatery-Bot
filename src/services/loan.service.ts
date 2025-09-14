@@ -25,7 +25,7 @@ export class LoanService {
     termQuantity: number;
     fee?: number;
   }): Promise<Loan> {
-    const { mezonUserId, amount, interestRate, termUnit, termQuantity, fee } =
+    const { mezonUserId, amount, interestRate, termUnit, termQuantity } =
       params;
     const user = await this.userService.getUserByMezonId(mezonUserId);
     if (!user) throw new Error('User not found');
@@ -50,7 +50,7 @@ export class LoanService {
       interestRate,
       termUnit,
       termQuantity,
-      fee: fee || 0,
+      fee: 0,
       status: LoanStatus.PENDING,
       dueDate,
       description: `Yêu cầu vay ${amount} tokens (${termQuantity} ${termUnit})`,
@@ -99,6 +99,10 @@ export class LoanService {
 
     loan.lenderUserId = lender.id;
     await this.loanRepository.save(loan);
+
+    if (!loan.fee || Number(loan.fee) <= 0) {
+      loan.fee = 5000;
+    }
 
     const disburseAmount = loan.amount - loan.fee;
     if (disburseAmount < 0) throw new Error('Phí lớn hơn số tiền');

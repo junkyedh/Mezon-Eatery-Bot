@@ -17,6 +17,18 @@ export class MezonWalletService {
     return this.mezon.getBotUserId();
   }
 
+  async getBotBalance(): Promise<number> {
+    try {
+      const botId = this.getBotUserId();
+      if (!botId) return -1; // chưa lấy được botId
+
+      return await this.getUserBalance(botId);
+    } catch (error) {
+      console.error('[MezonWalletService] getBotBalance error:', error);
+      return -1;
+    }
+  }
+
   async getUserBalance(mezonUserId: string): Promise<number> {
     try {
       const clan = await this.mezon.getClient().clans.fetch('0');
