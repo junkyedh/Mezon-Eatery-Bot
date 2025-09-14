@@ -58,7 +58,7 @@ export class LoanChecklistCommand extends CommandMessage {
     const messageContent = [
       '📋 Danh sách yêu cầu vay đang chờ (tối đa 10)',
       lines.join('\n\n'),
-      'Dùng !chovay <loanId> để giải ngân.',
+      'Dùng !loan-fund <loanId> để giải ngân.',
     ].join('\n\n');
     return this.replyMessageGenerate({ messageContent }, message);
   }

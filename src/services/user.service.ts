@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThan } from 'typeorm';
 import { User } from '@app/entities/user.entity';
 
 @Injectable()
@@ -61,5 +61,18 @@ export class UserService {
 
   async unblockUser(userId: string): Promise<void> {
     await this.userRepository.update(userId, { isBlocked: false });
+  }
+
+  async getUsersWithPositiveBalance(): Promise<User[]> {
+    return this.userRepository.find({
+      where: { balance: MoreThan(0) },
+      order: { balance: 'DESC' },
+    });
+  }
+
+  async getUserByUsername(username: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { username },
+    });
   }
 }

@@ -26,7 +26,7 @@ export class BalanceCommand extends CommandMessage {
         message.sender_id,
         message.username || 'Unknown User',
       );
-      // Calculate tenure
+      // Tính thâm niên (năm) dựa trên thời điểm user tham gia (proxy: createdAt trong hệ thống)
       const now = Date.now();
       const createdTime = user.createdAt
         ? new Date(user.createdAt).getTime()
@@ -38,28 +38,42 @@ export class BalanceCommand extends CommandMessage {
       const tenureDisplay =
         tenureYears < 1 ? '< 1 năm' : `${Math.floor(tenureYears)} năm`;
 
-      // Active loan summary
+      // Active loan summary (if any)
       const activeLoan = await this.loanService.getActiveLoan(
         message.sender_id,
       );
       let loanLines: string[] = [];
+
       if (activeLoan) {
+        // Use consistent real-time repay calculation
+        const { totalDue, interestAccrued } =
+          this.loanService.calculateRealTimeRepayAmount(activeLoan);
         const acc = this.loanService.calculateAccruedInterest(activeLoan);
-        const totalDue = activeLoan.amount + acc.interestAccrued;
+
+        // Ensure dueDate is properly formatted
+        const dueDate =
+          activeLoan.dueDate instanceof Date
+            ? activeLoan.dueDate
+            : new Date(activeLoan.dueDate);
+
         loanLines = [
-          '📌 **Khoản vay đang hoạt động**',
+          '',
+          '📋 **Khoản vay đang hoạt động (1)**',
+          '',
+          `♦️ **Khoản vay #1**`,
           `🆔 Mã giao dịch: ${activeLoan.id}`,
           `💰 Gốc: ${formatToken(activeLoan.amount)}`,
           `📈 Lãi suất năm: ${activeLoan.interestRate}%`,
-          `💸 Lãi tạm tính: ${formatToken(acc.interestAccrued)} tokens`,
-          `💼 Tổng tạm phải trả: ${formatToken(totalDue)} tokens`,
-          `📆 Đáo hạn: ${activeLoan.dueDate.toLocaleDateString('vi-VN')} (còn ${Math.max(acc.totalTermDays - acc.elapsedDays, 0)} ngày)`,
+          `💸 Lãi tạm tính: ${formatToken(interestAccrued)}`,
+          `💼 Tổng tạm phải trả: ${formatToken(totalDue)}`,
+          `📅 Đáo hạn: ${dueDate.toLocaleDateString('vi-VN')} (còn ${Math.max(acc.totalTermDays - acc.elapsedDays, 0)} ngày)`,
         ];
       }
+
       const messageContent = [
         '💰 **NCC Credit Balance**',
         `👤 Người dùng: ${user.username}`,
-        `💳 Số dư NCC Credit: ${formatToken(user.balance)} tokens`,
+        `💳 Số dư NCC Credit: ${formatToken(user.balance)}`,
         `🏢 Vai trò (Role): ${user.jobLevel || 'Chưa cập nhật'}`,
         `⏰ Thâm niên Mezon: ${tenureDisplay}`,
         ...loanLines,

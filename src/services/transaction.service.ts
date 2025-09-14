@@ -7,6 +7,8 @@ import {
   TransactionStatus,
 } from '@app/entities/transaction.entity';
 import { UserService } from './user.service';
+import { MezonWalletService } from './mezon-wallet.service';
+import { PoolService } from './pool.service';
 
 @Injectable()
 export class TransactionService {
@@ -14,6 +16,8 @@ export class TransactionService {
     @InjectRepository(Transaction)
     private transactionRepository: Repository<Transaction>,
     private userService: UserService,
+    private wallet: MezonWalletService,
+    private poolService: PoolService,
   ) {}
 
   async deposit(
@@ -26,6 +30,14 @@ export class TransactionService {
     // Validate minimum amount
     if (amount < 1000) {
       throw new Error('Minimum deposit amount is 1,000 tokens');
+    }
+
+    // Check for existing transaction with the same idempotency key
+    if (idempotencyKey) {
+      const existingTx = await this.findByIdempotencyKey(idempotencyKey);
+      if (existingTx) {
+        return existingTx;
+      }
     }
 
     return await this.transactionRepository.manager.transaction(
@@ -43,6 +55,10 @@ export class TransactionService {
 
         await entityManager.save(transaction);
         await this.userService.updateBalance(userId, amount);
+
+        // Update pool totalBalance to track actual tokens in bot
+        await this.poolService.addToPool(amount);
+
         return transaction;
       },
     );
@@ -84,6 +100,10 @@ export class TransactionService {
 
         await entityManager.save(transaction);
         await this.userService.updateBalance(userId, -amount);
+
+        // Update pool totalBalance to track actual tokens removed from bot
+        await this.poolService.removeFromPool(amount);
+
         return transaction;
       },
     );
@@ -107,6 +127,65 @@ export class TransactionService {
     return this.transactionRepository.findOne({
       where: { externalTxId },
     });
+  }
+
+  async findPendingTransactions(): Promise<Transaction[]> {
+    return this.transactionRepository.find({
+      where: { status: TransactionStatus.PENDING },
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  async reconcileTransactions(): Promise<void> {
+    const pendingTransactions = await this.findPendingTransactions();
+    for (const transaction of pendingTransactions) {
+      console.log(`Reconciling transaction ${transaction.id}`);
+
+      if (!transaction.externalTxId) {
+        console.warn(
+          `Transaction ${transaction.id} has no externalTxId, cannot reconcile`,
+        );
+        continue;
+      }
+
+      try {
+        const isTransactionSuccessful = await this.wallet.getTransactionStatus(
+          transaction.externalTxId,
+        );
+
+        if (isTransactionSuccessful) {
+          await this.transactionRepository.update(transaction.id, {
+            status: TransactionStatus.COMPLETED,
+          });
+          console.log(`Transaction ${transaction.id} marked as COMPLETED`);
+
+          // If it was a deposit, update user balance
+          if (
+            transaction.type === TransactionType.DEPOSIT &&
+            transaction.status !== TransactionStatus.COMPLETED
+          ) {
+            await this.userService.updateBalance(
+              transaction.userId,
+              transaction.amount,
+            );
+            console.log(
+              `Updated balance for user ${transaction.userId} with amount ${transaction.amount}`,
+            );
+          }
+        } else {
+          // Update status to failed after several attempts
+          await this.transactionRepository.update(transaction.id, {
+            status: TransactionStatus.FAILED,
+          });
+          console.log(`Transaction ${transaction.id} marked as FAILED`);
+        }
+      } catch (error) {
+        console.error(
+          `Error reconciling transaction ${transaction.id}:`,
+          error,
+        );
+      }
+    }
   }
 
   async recordDeposit({

@@ -78,7 +78,6 @@ export class WithdrawCommand extends CommandMessage {
           'mezon',
         );
         transactionId = transaction.id;
-        // Re-fetch user to display accurate balance
         const fresh = await this.userService.getUserById(user.id);
         updatedBalance = fresh?.balance ?? user.balance - amount;
       } catch (dbErr) {

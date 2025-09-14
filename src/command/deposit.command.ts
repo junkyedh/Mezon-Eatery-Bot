@@ -31,7 +31,7 @@ export class DepositCommand extends CommandMessage {
       const prettyAmount =
         amount > 0 ? `**${formatToken(amount)}** token ` : '';
       const messageContent =
-        `🧾 **Hướng Dẫn Nạp Token**` +
+        `🧾 **Hướng Dẫn Nạp Token**\n` +
         `➡️ Chuyển ${prettyAmount}trực tiếp cho bot qua Mezon transfer.\n` +
         `✅ Bot nhận được sẽ cập nhật số dư của bạn.`;
 

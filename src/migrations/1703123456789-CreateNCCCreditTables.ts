@@ -10,7 +10,7 @@ export class CreateNCCCreditTables1703123456789 implements MigrationInterface {
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "mezonUserId" character varying NOT NULL,
         "username" character varying NOT NULL,
-        -- "ncScore" integer NOT NULL DEFAULT '100000', -- Removed NC Score column
+        "ncScore" integer NOT NULL DEFAULT '100000',
         "balance" integer NOT NULL DEFAULT '0',
         "jobLevel" character varying,
         "tenure" integer,
