@@ -9,7 +9,6 @@ import { LoanFundCommand } from '@app/command/loan-fund.command';
 import { LoanTransactionCommand } from '@app/command/loan-transaction.command';
 import { LoanRepayCommand } from '@app/command/loan-repay.command';
 import { BalanceCommand } from '@app/command/balance.command';
-import { AdminCommand } from '@app/command/admin.command';
 import { ClientConfigService } from '@app/config/client.config';
 import { BotGateway } from '@app/gateway/bot.gateway';
 import { EventListenerChannelMessage } from '@app/listeners';
@@ -30,6 +29,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ListAllCommand } from '@app/command/list-all.command';
 
 @Module({
   imports: [
@@ -65,7 +65,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     LoanTransactionCommand,
     LoanRepayCommand,
     BalanceCommand,
-    AdminCommand,
+    ListAllCommand,
   ],
   controllers: [],
 })

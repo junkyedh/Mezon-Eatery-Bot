@@ -27,7 +27,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     TypeOrmModule.forRoot(dataSourceOption),
     EventEmitterModule.forRoot(),
     MezonModule.forRootAsync({
-      imports: [ConfigModule],
+      imports: [ConfigModule, BotModule],
     }),
     BotModule,
   ],
